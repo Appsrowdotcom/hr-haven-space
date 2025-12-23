@@ -67,11 +67,18 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, full_name, department_id } = await req.json()
+    const { email, full_name, password, department_id } = await req.json()
 
     if (!email) {
       return new Response(
         JSON.stringify({ error: 'Email is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!password || password.length < 6) {
+      return new Response(
+        JSON.stringify({ error: 'Password must be at least 6 characters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -90,13 +97,10 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Generate a temporary password for the invited user
-    const tempPassword = crypto.randomUUID() + crypto.randomUUID().slice(0, 8)
-
-    // Create the user in auth.users using admin API
+    // Create the user in auth.users using admin API with the provided password
     const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: tempPassword,
+      password, // Use the password provided by admin
       email_confirm: true, // Auto-confirm since this is an invite
       user_metadata: {
         full_name,

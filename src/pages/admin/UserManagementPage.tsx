@@ -37,6 +37,7 @@ const UserManagementPage: React.FC = () => {
   const [inviteForm, setInviteForm] = useState({
     email: '',
     full_name: '',
+    password: '',
     department_id: '',
   });
   const [selectedRoleId, setSelectedRoleId] = useState('');
@@ -105,6 +106,7 @@ const UserManagementPage: React.FC = () => {
         body: {
           email: inviteForm.email,
           full_name: inviteForm.full_name,
+          password: inviteForm.password,
           department_id: inviteForm.department_id || null,
         },
       });
@@ -112,9 +114,9 @@ const UserManagementPage: React.FC = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success('User invited successfully');
+      toast.success('User created successfully. You can now share the credentials.');
       setInviteDialogOpen(false);
-      setInviteForm({ email: '', full_name: '', department_id: '' });
+      setInviteForm({ email: '', full_name: '', password: '', department_id: '' });
       fetchUsers();
     } catch (error: any) {
       toast.error(error.message || 'Failed to invite user');
@@ -247,6 +249,17 @@ const UserManagementPage: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={inviteForm.password}
+                  onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })}
+                  placeholder="Minimum 6 characters"
+                />
+                <p className="text-xs text-muted-foreground">Set a password that you can share with the user</p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="department">Department (Optional)</Label>
                 {departments.length === 0 ? (
                   <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md flex items-center justify-between">
@@ -273,9 +286,9 @@ const UserManagementPage: React.FC = () => {
                   </Select>
                 )}
               </div>
-              <Button onClick={handleInviteUser} disabled={saving || !inviteForm.email} className="w-full">
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                Send Invitation
+              <Button onClick={handleInviteUser} disabled={saving || !inviteForm.email || !inviteForm.password || inviteForm.password.length < 6} className="w-full">
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                Create User
               </Button>
             </div>
           </DialogContent>
