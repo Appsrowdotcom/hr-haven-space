@@ -25,8 +25,8 @@ interface AttendanceRecord {
 
 const AttendancePage: React.FC = () => {
   const { user } = useAuth();
-  const { isCompanyAdmin, hasRole } = usePermissions();
-  const canViewTeamAttendance = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager');
+  const { isCompanyAdmin, hasRole, hasPermission } = usePermissions();
+  const canViewTeamAttendance = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager') || hasPermission('attendance.view_reports');
   const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);

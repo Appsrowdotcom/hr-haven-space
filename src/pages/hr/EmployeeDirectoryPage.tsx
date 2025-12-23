@@ -48,8 +48,8 @@ const getDepartment = (dept: { name: string }[] | null | undefined): { name: str
 
 const EmployeeDirectoryPage: React.FC = () => {
   const { company, departments } = useCompany();
-  const { isCompanyAdmin, hasRole } = usePermissions();
-  const canEditEmployees = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager');
+  const { isCompanyAdmin, hasRole, hasPermission } = usePermissions();
+  const canEditEmployees = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager') || hasPermission('hr.edit_employee');
   const [employees, setEmployees] = useState<EmployeeWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');

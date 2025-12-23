@@ -10,8 +10,6 @@ import {
   ShieldCheck,
   Settings,
   UserCog,
-  Briefcase,
-  FileText,
   CreditCard,
   PieChart,
   Target,
@@ -40,6 +38,7 @@ export interface NavSection {
 }
 
 // Navigation configuration - all menu items derived from this config
+// Permission codes must match database permissions table
 export const navigationConfig: NavSection[] = [
   {
     id: 'main',
@@ -63,6 +62,7 @@ export const navigationConfig: NavSection[] = [
         href: '/hr/employees',
         icon: Users,
         module: 'HR_CORE',
+        permission: 'hr.view_employee',
       },
       {
         id: 'onboarding',
@@ -70,6 +70,7 @@ export const navigationConfig: NavSection[] = [
         href: '/hr/onboarding',
         icon: UserPlus,
         module: 'HR_CORE',
+        permission: 'hr.manage_department',
       },
       {
         id: 'attendance',
@@ -77,6 +78,7 @@ export const navigationConfig: NavSection[] = [
         href: '/hr/attendance',
         icon: Clock,
         module: 'ATTENDANCE',
+        permission: 'attendance.view',
       },
       {
         id: 'leave',
@@ -84,6 +86,7 @@ export const navigationConfig: NavSection[] = [
         href: '/hr/leave',
         icon: CalendarDays,
         module: 'LEAVE',
+        permission: 'leave.view',
       },
     ],
   },
@@ -97,7 +100,7 @@ export const navigationConfig: NavSection[] = [
         href: '/finance/payroll',
         icon: DollarSign,
         module: 'FINANCE',
-        permission: 'finance.payroll.view',
+        permission: 'finance.view_payroll',
       },
       {
         id: 'expenses',
@@ -105,7 +108,7 @@ export const navigationConfig: NavSection[] = [
         href: '/finance/expenses',
         icon: CreditCard,
         module: 'FINANCE',
-        permission: 'finance.expenses.view',
+        permission: 'finance.view',
       },
     ],
   },
@@ -119,7 +122,7 @@ export const navigationConfig: NavSection[] = [
         href: '/revenue/dashboard',
         icon: TrendingUp,
         module: 'REVENUE',
-        permission: 'revenue.dashboard.view',
+        permission: 'revenue.view',
       },
       {
         id: 'revenue-reports',
@@ -127,7 +130,7 @@ export const navigationConfig: NavSection[] = [
         href: '/revenue/reports',
         icon: PieChart,
         module: 'REVENUE',
-        permission: 'revenue.reports.view',
+        permission: 'revenue.view',
       },
     ],
   },
@@ -141,7 +144,7 @@ export const navigationConfig: NavSection[] = [
         href: '/sales/leads',
         icon: Target,
         module: 'SALES_CRM',
-        permission: 'sales.leads.view',
+        permission: 'sales.manage_leads',
       },
       {
         id: 'deals',
@@ -149,7 +152,7 @@ export const navigationConfig: NavSection[] = [
         href: '/sales/deals',
         icon: Handshake,
         module: 'SALES_CRM',
-        permission: 'sales.deals.view',
+        permission: 'sales.manage_deals',
       },
     ],
   },
@@ -163,7 +166,7 @@ export const navigationConfig: NavSection[] = [
         href: '/compliance/policies',
         icon: ShieldCheck,
         module: 'COMPLIANCE',
-        permission: 'compliance.policies.view',
+        permission: 'compliance.view',
       },
       {
         id: 'audits',
@@ -171,7 +174,7 @@ export const navigationConfig: NavSection[] = [
         href: '/compliance/audits',
         icon: ClipboardList,
         module: 'COMPLIANCE',
-        permission: 'compliance.audits.view',
+        permission: 'compliance.manage',
       },
     ],
   },
@@ -185,7 +188,7 @@ export const navigationConfig: NavSection[] = [
         href: '/admin/company',
         icon: Building2,
         module: 'ADMIN',
-        permission: 'admin.company.view',
+        permission: 'admin.manage_company',
       },
       {
         id: 'user-management',
@@ -193,7 +196,7 @@ export const navigationConfig: NavSection[] = [
         href: '/admin/users',
         icon: UserCog,
         module: 'ADMIN',
-        permission: 'admin.users.view',
+        permission: 'admin.invite_users',
       },
       {
         id: 'roles-permissions',
@@ -201,7 +204,7 @@ export const navigationConfig: NavSection[] = [
         href: '/admin/roles',
         icon: ShieldCheck,
         module: 'ADMIN',
-        permission: 'admin.roles.view',
+        permission: 'admin.manage_roles',
       },
       {
         id: 'modules',
@@ -209,7 +212,7 @@ export const navigationConfig: NavSection[] = [
         href: '/admin/modules',
         icon: Settings,
         module: 'ADMIN',
-        permission: 'admin.settings.view',
+        permission: 'admin.manage_modules',
       },
     ],
   },
