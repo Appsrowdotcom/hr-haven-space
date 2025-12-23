@@ -9,9 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, Clock, LogIn, LogOut, Timer, CalendarDays, Users } from 'lucide-react';
+import { Loader2, Clock, LogIn, LogOut, Timer, CalendarDays, Users, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 import TeamAttendanceView from '@/components/hr/TeamAttendanceView';
+import AttendanceReports from '@/components/hr/AttendanceReports';
 
 interface AttendanceRecord {
   id: string;
@@ -144,6 +145,7 @@ const AttendancePage: React.FC = () => {
         <TabsList>
           <TabsTrigger value="my-attendance">My Attendance</TabsTrigger>
           {canViewTeamAttendance && <TabsTrigger value="team"><Users className="mr-2 h-4 w-4" />Team</TabsTrigger>}
+          {canViewTeamAttendance && <TabsTrigger value="reports"><FileSpreadsheet className="mr-2 h-4 w-4" />Reports</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="my-attendance" className="space-y-6 mt-6">
@@ -209,6 +211,7 @@ const AttendancePage: React.FC = () => {
         </TabsContent>
 
         {canViewTeamAttendance && <TabsContent value="team" className="mt-6"><TeamAttendanceView /></TabsContent>}
+        {canViewTeamAttendance && <TabsContent value="reports" className="mt-6"><AttendanceReports /></TabsContent>}
       </Tabs>
     </div>
   );
