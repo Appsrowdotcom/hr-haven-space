@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ColorPicker } from '@/components/ui/color-picker';
 import { toast } from 'sonner';
 import { Building2, Palette, Save, Loader2 } from 'lucide-react';
 
@@ -246,62 +247,35 @@ const CompanySettingsPage: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Colors</CardTitle>
-                <CardDescription>Customize your brand colors (HSL format)</CardDescription>
+                <CardDescription>Customize your brand colors using the color picker or hex code</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="primary_color">Primary Color</Label>
-                    <Input
-                      id="primary_color"
-                      value={brandingForm.primary_color}
-                      onChange={(e) => setBrandingForm({ ...brandingForm, primary_color: e.target.value })}
-                      placeholder="222.2 47.4% 11.2%"
-                    />
-                    <div 
-                      className="h-8 rounded border"
-                      style={{ backgroundColor: `hsl(${brandingForm.primary_color})` }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="secondary_color">Secondary Color</Label>
-                    <Input
-                      id="secondary_color"
-                      value={brandingForm.secondary_color}
-                      onChange={(e) => setBrandingForm({ ...brandingForm, secondary_color: e.target.value })}
-                      placeholder="210 40% 96.1%"
-                    />
-                    <div 
-                      className="h-8 rounded border"
-                      style={{ backgroundColor: `hsl(${brandingForm.secondary_color})` }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="accent_color">Accent Color</Label>
-                    <Input
-                      id="accent_color"
-                      value={brandingForm.accent_color}
-                      onChange={(e) => setBrandingForm({ ...brandingForm, accent_color: e.target.value })}
-                      placeholder="210 40% 96.1%"
-                    />
-                    <div 
-                      className="h-8 rounded border"
-                      style={{ backgroundColor: `hsl(${brandingForm.accent_color})` }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="background_color">Background Color</Label>
-                    <Input
-                      id="background_color"
-                      value={brandingForm.background_color}
-                      onChange={(e) => setBrandingForm({ ...brandingForm, background_color: e.target.value })}
-                      placeholder="0 0% 100%"
-                    />
-                    <div 
-                      className="h-8 rounded border"
-                      style={{ backgroundColor: `hsl(${brandingForm.background_color})` }}
-                    />
-                  </div>
+                  <ColorPicker
+                    label="Primary Color"
+                    value={brandingForm.primary_color}
+                    onChange={(value) => setBrandingForm({ ...brandingForm, primary_color: value })}
+                  />
+                  <ColorPicker
+                    label="Secondary Color"
+                    value={brandingForm.secondary_color}
+                    onChange={(value) => setBrandingForm({ ...brandingForm, secondary_color: value })}
+                  />
+                  <ColorPicker
+                    label="Accent Color"
+                    value={brandingForm.accent_color}
+                    onChange={(value) => setBrandingForm({ ...brandingForm, accent_color: value })}
+                  />
+                  <ColorPicker
+                    label="Background Color"
+                    value={brandingForm.background_color}
+                    onChange={(value) => setBrandingForm({ ...brandingForm, background_color: value })}
+                  />
+                  <ColorPicker
+                    label="Foreground Color"
+                    value={brandingForm.foreground_color}
+                    onChange={(value) => setBrandingForm({ ...brandingForm, foreground_color: value })}
+                  />
                 </div>
               </CardContent>
             </Card>
