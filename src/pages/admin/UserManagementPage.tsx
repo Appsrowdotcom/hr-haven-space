@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { usePermissions } from '@/contexts/PermissionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ interface UserWithRoles extends Profile {
 const UserManagementPage: React.FC = () => {
   const { user } = useAuth();
   const { company, departments } = useCompany();
+  const { refreshPermissions } = usePermissions();
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -147,11 +149,13 @@ const UserManagementPage: React.FC = () => {
         });
 
       if (error) throw error;
-      toast.success('Role assigned successfully');
+      toast.success('Role assigned successfully. The user needs to refresh their browser to see changes.');
       setAssignRoleDialogOpen(false);
       setSelectedUser(null);
       setSelectedRoleId('');
       fetchUsers();
+      // Refresh current user's permissions in case they're the one being updated
+      await refreshPermissions();
     } catch (error: any) {
       toast.error(error.message || 'Failed to assign role');
     } finally {
@@ -167,8 +171,10 @@ const UserManagementPage: React.FC = () => {
         .eq('id', userRoleId);
 
       if (error) throw error;
-      toast.success('Role removed successfully');
+      toast.success('Role removed successfully. The user needs to refresh their browser to see changes.');
       fetchUsers();
+      // Refresh current user's permissions in case they're the one being updated
+      await refreshPermissions();
     } catch (error: any) {
       toast.error(error.message || 'Failed to remove role');
     }

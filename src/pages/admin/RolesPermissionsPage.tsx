@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompany } from '@/contexts/CompanyContext';
+import { usePermissions } from '@/contexts/PermissionContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ interface RoleWithPermissions extends Role {
 const RolesPermissionsPage: React.FC = () => {
   const { user } = useAuth();
   const { company } = useCompany();
+  const { refreshPermissions } = usePermissions();
   const [roles, setRoles] = useState<RoleWithPermissions[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,11 +131,13 @@ const RolesPermissionsPage: React.FC = () => {
         if (permError) throw permError;
       }
 
-      toast.success('Role created successfully');
+      toast.success('Role created successfully. Users with this role need to refresh their browser to see changes.');
       setCreateDialogOpen(false);
       setRoleForm({ name: '', description: '' });
       setSelectedPermissions(new Set());
       fetchRoles();
+      // Refresh current user's permissions in case they're affected
+      await refreshPermissions();
     } catch (error: any) {
       toast.error(error.message || 'Failed to create role');
     } finally {
@@ -198,11 +202,13 @@ const RolesPermissionsPage: React.FC = () => {
         if (removeError) throw removeError;
       }
 
-      toast.success('Role updated successfully');
+      toast.success('Role updated successfully. Users with this role need to refresh their browser to see changes.');
       setEditingRole(null);
       setRoleForm({ name: '', description: '' });
       setSelectedPermissions(new Set());
       fetchRoles();
+      // Refresh current user's permissions in case they're affected
+      await refreshPermissions();
     } catch (error: any) {
       toast.error(error.message || 'Failed to update role');
     } finally {
