@@ -1,8 +1,5 @@
-import { useEffect, useContext } from 'react';
+import { useEffect, useState } from 'react';
 import type { Tables } from '@/integrations/supabase/types';
-
-// Import context directly to avoid throw on undefined
-import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -11,11 +8,10 @@ type CompanyBranding = Tables<'company_branding'>;
 /**
  * Hook to apply company branding to CSS custom properties
  * Updates theme colors dynamically based on company settings
- * This hook is safe to use even when CompanyContext is not available
  */
 export const useCompanyTheme = () => {
   const { profile } = useAuth();
-  const [branding, setBranding] = React.useState<CompanyBranding | null>(null);
+  const [branding, setBranding] = useState<CompanyBranding | null>(null);
 
   // Fetch branding directly to avoid context dependency issues
   useEffect(() => {
