@@ -12,10 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, Mail, Phone, MapPin, Building2, Calendar, Loader2, User, Briefcase, Pencil } from 'lucide-react';
+import { Search, Mail, Phone, MapPin, Building2, Calendar, Loader2, User, Briefcase, Pencil, FolderTree } from 'lucide-react';
 import EmployeeProfileEditor from '@/components/hr/EmployeeProfileEditor';
+import DepartmentManagement from '@/components/hr/DepartmentManagement';
 import type { Tables } from '@/integrations/supabase/types';
-
 type Profile = Tables<'profiles'>;
 
 interface EmployeeDetails {
@@ -112,6 +112,19 @@ const EmployeeDirectoryPage: React.FC = () => {
         <p className="text-muted-foreground">View and manage employee information</p>
       </div>
 
+      <Tabs defaultValue="employees">
+        <TabsList>
+          <TabsTrigger value="employees">
+            <User className="mr-2 h-4 w-4" />
+            Employees
+          </TabsTrigger>
+          <TabsTrigger value="departments">
+            <FolderTree className="mr-2 h-4 w-4" />
+            Departments
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="employees" className="mt-6">
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -190,6 +203,12 @@ const EmployeeDirectoryPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="departments" className="mt-6">
+          <DepartmentManagement />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-2xl">
