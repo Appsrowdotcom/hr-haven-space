@@ -50,7 +50,11 @@ interface LeaveBalance {
 const LeaveManagementPage: React.FC = () => {
   const { user } = useAuth();
   const { company } = useCompany();
-  const { isCompanyAdmin } = usePermissions();
+  const { isCompanyAdmin, hasPermission, hasRole } = usePermissions();
+  
+  // Permission checks - allow Company Admin, HR role, or specific permissions
+  const canManageLeave = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager') || hasPermission('leave.approve');
+  const canConfigureLeaveTypes = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager') || hasPermission('leave.manage_policy');
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
   const [allRequests, setAllRequests] = useState<LeaveRequest[]>([]);
@@ -99,7 +103,7 @@ const LeaveManagementPage: React.FC = () => {
   };
 
   const fetchAllRequests = async () => {
-    if (!company?.id || !isCompanyAdmin()) return;
+    if (!company?.id || !canManageLeave) return;
     const { data, error } = await supabase
       .from('leave_requests')
       .select(`
@@ -151,7 +155,7 @@ const LeaveManagementPage: React.FC = () => {
     if (company?.id && user?.id) {
       loadData();
     }
-  }, [company?.id, user?.id, isCompanyAdmin]);
+  }, [company?.id, user?.id, canManageLeave]);
 
   const calculateDays = (start: string, end: string) => {
     if (!start || !end) return 0;
@@ -346,8 +350,8 @@ const LeaveManagementPage: React.FC = () => {
       <Tabs defaultValue="my-requests">
         <TabsList>
           <TabsTrigger value="my-requests">My Requests</TabsTrigger>
-          {isCompanyAdmin() && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
-          {isCompanyAdmin() && <TabsTrigger value="config"><Settings className="h-4 w-4 mr-1" />Leave Types</TabsTrigger>}
+          {canManageLeave && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
+          {canConfigureLeaveTypes && <TabsTrigger value="config"><Settings className="h-4 w-4 mr-1" />Leave Types</TabsTrigger>}
         </TabsList>
         
         <TabsContent value="my-requests">
@@ -389,7 +393,7 @@ const LeaveManagementPage: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {isCompanyAdmin() && (
+        {canManageLeave && (
           <TabsContent value="pending-approvals">
             <Card>
               <CardHeader>
@@ -447,7 +451,7 @@ const LeaveManagementPage: React.FC = () => {
           </TabsContent>
         )}
 
-        {isCompanyAdmin() && (
+        {canConfigureLeaveTypes && (
           <TabsContent value="config">
             <LeaveTypeConfig />
           </TabsContent>

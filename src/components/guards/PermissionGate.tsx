@@ -12,6 +12,10 @@ interface PermissionGateProps {
   permissions?: string[];
   /** Multiple permissions - user must have ANY of them */
   anyPermission?: string[];
+  /** Role name required to render children */
+  role?: string;
+  /** Multiple roles - user must have ANY of them */
+  anyRole?: string[];
   /** Module that must be enabled */
   module?: ModuleCode;
   /** Content to show when access is denied */
@@ -21,7 +25,7 @@ interface PermissionGateProps {
 }
 
 /**
- * Conditional rendering gate based on permissions and modules.
+ * Conditional rendering gate based on permissions, roles, and modules.
  * Use this to show/hide UI elements based on user access.
  */
 export const PermissionGate: React.FC<PermissionGateProps> = ({
@@ -29,45 +33,53 @@ export const PermissionGate: React.FC<PermissionGateProps> = ({
   permission,
   permissions,
   anyPermission,
+  role,
+  anyRole,
   module,
   fallback = null,
   strictMode = false,
 }) => {
-  const { hasPermission, isModuleEnabled, isCompanyAdmin, isLoading } = usePermissions();
+  const { hasPermission, hasRole, isModuleEnabled, isCompanyAdmin, isLoading } = usePermissions();
 
   if (isLoading) {
     return null;
   }
 
-  // Company admins bypass checks unless strictMode is enabled
-  if (!strictMode && isCompanyAdmin()) {
-    // Still check module enablement for admins
-    if (module && !isModuleEnabled(module)) {
-      return <>{fallback}</>;
-    }
-    return <>{children}</>;
-  }
-
-  // Check module first
+  // Check module first - even admins can't bypass module checks
   if (module && !isModuleEnabled(module)) {
     return <>{fallback}</>;
   }
 
+  // Company admins bypass permission/role checks unless strictMode is enabled
+  if (!strictMode && isCompanyAdmin()) {
+    return <>{children}</>;
+  }
+
   let hasAccess = true;
+
+  // Single role check
+  if (role) {
+    hasAccess = hasRole(role);
+  }
+
+  // Multiple roles - ANY required
+  if (anyRole && anyRole.length > 0) {
+    hasAccess = anyRole.some((r) => hasRole(r));
+  }
 
   // Single permission check
   if (permission) {
-    hasAccess = hasPermission(permission);
+    hasAccess = hasAccess && hasPermission(permission);
   }
 
   // Multiple permissions - ALL required
   if (permissions && permissions.length > 0) {
-    hasAccess = permissions.every((p) => hasPermission(p));
+    hasAccess = hasAccess && permissions.every((p) => hasPermission(p));
   }
 
   // Multiple permissions - ANY required
   if (anyPermission && anyPermission.length > 0) {
-    hasAccess = anyPermission.some((p) => hasPermission(p));
+    hasAccess = hasAccess && anyPermission.some((p) => hasPermission(p));
   }
 
   if (!hasAccess) {

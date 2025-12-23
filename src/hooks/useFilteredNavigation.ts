@@ -7,20 +7,33 @@ import { navigationConfig, type NavItem, type NavSection } from '@/config/naviga
  * Returns only the menu items the current user can access
  */
 export const useFilteredNavigation = (): NavSection[] => {
-  const { hasPermission, isModuleEnabled, isCompanyAdmin } = usePermissions();
+  const { hasPermission, isModuleEnabled, isCompanyAdmin, hasRole } = usePermissions();
 
   const filteredNavigation = useMemo(() => {
     const isAdmin = isCompanyAdmin();
+    const isHR = hasRole('HR') || hasRole('Hr manager');
 
     const filterItem = (item: NavItem): NavItem | null => {
-      // Company admins can see everything
-      if (isAdmin) {
-        return item;
-      }
-
       // Check if module is enabled (if module is specified)
       if (item.module && !isModuleEnabled(item.module)) {
         return null;
+      }
+
+      // Company admins or HR roles can see HR-related items
+      if (isAdmin || isHR) {
+        // Filter children recursively
+        if (item.children) {
+          const filteredChildren = item.children
+            .map(filterItem)
+            .filter((child): child is NavItem => child !== null);
+
+          if (filteredChildren.length === 0) {
+            return null;
+          }
+
+          return { ...item, children: filteredChildren };
+        }
+        return item;
       }
 
       // Check if user has permission (if permission is specified)
@@ -59,7 +72,7 @@ export const useFilteredNavigation = (): NavSection[] => {
     return navigationConfig
       .map(filterSection)
       .filter((section): section is NavSection => section !== null);
-  }, [hasPermission, isModuleEnabled, isCompanyAdmin]);
+  }, [hasPermission, isModuleEnabled, isCompanyAdmin, hasRole]);
 
   return filteredNavigation;
 };

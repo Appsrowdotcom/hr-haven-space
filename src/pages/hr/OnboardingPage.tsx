@@ -55,7 +55,10 @@ interface EmployeeOnboardingItem {
 const OnboardingPage: React.FC = () => {
   const { user } = useAuth();
   const { company } = useCompany();
-  const { isCompanyAdmin } = usePermissions();
+  const { isCompanyAdmin, hasPermission, hasRole } = usePermissions();
+  
+  // Permission checks - allow Company Admin, HR role, or specific permissions
+  const canManageOnboarding = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager') || hasPermission('hr.manage_department');
   const [templates, setTemplates] = useState<OnboardingTemplate[]>([]);
   const [employeeOnboardings, setEmployeeOnboardings] = useState<EmployeeOnboarding[]>([]);
   const [myOnboarding, setMyOnboarding] = useState<EmployeeOnboarding | null>(null);
@@ -89,7 +92,7 @@ const OnboardingPage: React.FC = () => {
   };
 
   const fetchEmployeeOnboardings = async () => {
-    if (!company?.id || !isCompanyAdmin()) return;
+    if (!company?.id || !canManageOnboarding) return;
     
     const { data, error } = await supabase
       .from('employee_onboarding')
@@ -139,7 +142,7 @@ const OnboardingPage: React.FC = () => {
     if (company?.id && user?.id) {
       loadData();
     }
-  }, [company?.id, user?.id, isCompanyAdmin]);
+  }, [company?.id, user?.id, canManageOnboarding]);
 
   const handleCreateTemplate = async () => {
     if (!company?.id || !templateForm.name) return;
@@ -247,7 +250,7 @@ const OnboardingPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-foreground">Onboarding</h1>
           <p className="text-muted-foreground">Manage employee onboarding checklists</p>
         </div>
-        {isCompanyAdmin() && (
+        {canManageOnboarding && (
           <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -331,7 +334,7 @@ const OnboardingPage: React.FC = () => {
         </Card>
       )}
 
-      {isCompanyAdmin() && (
+      {canManageOnboarding && (
         <Tabs defaultValue="templates">
           <TabsList>
             <TabsTrigger value="templates">Templates</TabsTrigger>

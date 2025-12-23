@@ -37,7 +37,10 @@ interface HRStats {
 const HRDashboardWidgets: React.FC = () => {
   const { user } = useAuth();
   const { company } = useCompany();
-  const { isCompanyAdmin, isModuleEnabled } = usePermissions();
+  const { isCompanyAdmin, isModuleEnabled, hasPermission, hasRole } = usePermissions();
+  
+  // Permission check - allow Company Admin, HR role, or relevant permissions
+  const canViewHRStats = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager') || hasPermission('hr.view_employee');
   const navigate = useNavigate();
   const [stats, setStats] = useState<HRStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,8 +79,8 @@ const HRDashboardWidgets: React.FC = () => {
             .select('id, profile:profiles!employee_onboarding_profile_id_fkey(company_id)')
             .eq('status', 'in_progress'),
           
-          // Recent leave requests (for admins)
-          isCompanyAdmin() ? supabase
+          // Recent leave requests (for admins/HR)
+          canViewHRStats ? supabase
             .from('leave_requests')
             .select(`
               id,
@@ -122,7 +125,7 @@ const HRDashboardWidgets: React.FC = () => {
     };
 
     fetchStats();
-  }, [company?.id, user?.id, isCompanyAdmin]);
+  }, [company?.id, user?.id, canViewHRStats]);
 
   if (isLoading) {
     return (
@@ -214,7 +217,7 @@ const HRDashboardWidgets: React.FC = () => {
       </div>
 
       {/* Recent Leave Requests - Only for admins */}
-      {isCompanyAdmin() && isModuleEnabled('LEAVE') && stats?.recentLeaveRequests && stats.recentLeaveRequests.length > 0 && (
+      {canViewHRStats && isModuleEnabled('LEAVE') && stats?.recentLeaveRequests && stats.recentLeaveRequests.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>

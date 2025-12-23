@@ -13,6 +13,10 @@ interface RequirePermissionProps {
   permissions?: string[];
   /** Multiple permissions - user must have ANY of them */
   anyPermission?: string[];
+  /** Role name required to access this route */
+  role?: string;
+  /** Multiple roles - user must have ANY of them */
+  anyRole?: string[];
   /** Redirect path when unauthorized (default: /unauthorized) */
   redirectTo?: string;
   /** Custom fallback component instead of redirect */
@@ -20,7 +24,7 @@ interface RequirePermissionProps {
 }
 
 /**
- * Route guard that protects routes based on user permissions.
+ * Route guard that protects routes based on user permissions and roles.
  * Redirects or shows fallback when user lacks required permissions.
  */
 export const RequirePermission: React.FC<RequirePermissionProps> = ({
@@ -28,10 +32,12 @@ export const RequirePermission: React.FC<RequirePermissionProps> = ({
   permission,
   permissions,
   anyPermission,
+  role,
+  anyRole,
   redirectTo = '/unauthorized',
   fallback,
 }) => {
-  const { hasPermission, isCompanyAdmin, isLoading } = usePermissions();
+  const { hasPermission, hasRole, isCompanyAdmin, isLoading } = usePermissions();
   const location = useLocation();
 
   if (isLoading) {
@@ -49,19 +55,29 @@ export const RequirePermission: React.FC<RequirePermissionProps> = ({
 
   let hasAccess = true;
 
+  // Single role check
+  if (role) {
+    hasAccess = hasRole(role);
+  }
+
+  // Multiple roles - ANY required
+  if (anyRole && anyRole.length > 0) {
+    hasAccess = anyRole.some((r) => hasRole(r));
+  }
+
   // Single permission check
   if (permission) {
-    hasAccess = hasPermission(permission);
+    hasAccess = hasAccess && hasPermission(permission);
   }
 
   // Multiple permissions - ALL required
   if (permissions && permissions.length > 0) {
-    hasAccess = permissions.every((p) => hasPermission(p));
+    hasAccess = hasAccess && permissions.every((p) => hasPermission(p));
   }
 
   // Multiple permissions - ANY required
   if (anyPermission && anyPermission.length > 0) {
-    hasAccess = anyPermission.some((p) => hasPermission(p));
+    hasAccess = hasAccess && anyPermission.some((p) => hasPermission(p));
   }
 
   if (!hasAccess) {
