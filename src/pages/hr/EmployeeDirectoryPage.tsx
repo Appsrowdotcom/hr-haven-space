@@ -16,22 +16,33 @@ import type { Tables } from '@/integrations/supabase/types';
 
 type Profile = Tables<'profiles'>;
 
-interface EmployeeWithDetails extends Profile {
-  department?: { name: string } | null;
-  employee_details?: {
-    designation?: string;
-    date_of_joining?: string;
-    employment_type?: string;
-    work_location?: string;
-    employee_id?: string;
-    date_of_birth?: string;
-    gender?: string;
-    address?: string;
-    city?: string;
-    emergency_contact_name?: string;
-    emergency_contact_phone?: string;
-  } | null;
+interface EmployeeDetails {
+  designation?: string | null;
+  date_of_joining?: string | null;
+  employment_type?: string | null;
+  work_location?: string | null;
+  employee_id?: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  address?: string | null;
+  city?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
 }
+
+interface EmployeeWithDetails extends Profile {
+  department?: { name: string }[] | null;
+  employee_details?: EmployeeDetails[] | null;
+}
+
+// Helper to get first item from joined array
+const getDetails = (details: EmployeeDetails[] | null | undefined): EmployeeDetails | null => {
+  return details && details.length > 0 ? details[0] : null;
+};
+
+const getDepartment = (dept: { name: string }[] | null | undefined): { name: string } | null => {
+  return dept && dept.length > 0 ? dept[0] : null;
+};
 
 const EmployeeDirectoryPage: React.FC = () => {
   const { company, departments } = useCompany();
@@ -50,7 +61,7 @@ const EmployeeDirectoryPage: React.FC = () => {
         .from('profiles')
         .select(`
           *,
-          department:departments(name),
+          department:departments!profiles_department_id_fkey(name),
           employee_details(*)
         `)
         .eq('company_id', company.id)
@@ -58,7 +69,7 @@ const EmployeeDirectoryPage: React.FC = () => {
         .order('full_name');
 
       if (error) throw error;
-      setEmployees((data as EmployeeWithDetails[]) || []);
+      setEmployees((data as unknown as EmployeeWithDetails[]) || []);
     } catch (error: any) {
       toast.error(error.message || 'Failed to fetch employees');
     } finally {
@@ -73,10 +84,11 @@ const EmployeeDirectoryPage: React.FC = () => {
   }, [company?.id]);
 
   const filteredEmployees = employees.filter(emp => {
+    const details = getDetails(emp.employee_details);
     const matchesSearch = 
       emp.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.employee_details?.designation?.toLowerCase().includes(searchQuery.toLowerCase());
+      details?.designation?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesDepartment = departmentFilter === 'all' || emp.department_id === departmentFilter;
     
@@ -132,39 +144,43 @@ const EmployeeDirectoryPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredEmployees.map((employee) => (
-                <Card
-                  key={employee.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => {
-                    setSelectedEmployee(employee);
-                    setDetailsOpen(true);
-                  }}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={employee.avatar_url || undefined} />
-                        <AvatarFallback>{getInitials(employee.full_name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">{employee.full_name || 'No name'}</h3>
-                        <p className="text-sm text-muted-foreground truncate">{employee.employee_details?.designation || 'No designation'}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          {employee.department && (
-                            <Badge variant="secondary" className="text-xs">
-                              {employee.department.name}
+              {filteredEmployees.map((employee) => {
+                const details = getDetails(employee.employee_details);
+                const dept = getDepartment(employee.department);
+                return (
+                  <Card
+                    key={employee.id}
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => {
+                      setSelectedEmployee(employee);
+                      setDetailsOpen(true);
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={employee.avatar_url || undefined} />
+                          <AvatarFallback>{getInitials(employee.full_name)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground truncate">{employee.full_name || 'No name'}</h3>
+                          <p className="text-sm text-muted-foreground truncate">{details?.designation || 'No designation'}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            {dept && (
+                              <Badge variant="secondary" className="text-xs">
+                                {dept.name}
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-xs">
+                              {details?.employment_type || 'Full-time'}
                             </Badge>
-                          )}
-                          <Badge variant="outline" className="text-xs">
-                            {employee.employee_details?.employment_type || 'Full-time'}
-                          </Badge>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -175,120 +191,124 @@ const EmployeeDirectoryPage: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Employee Details</DialogTitle>
           </DialogHeader>
-          {selectedEmployee && (
-            <Tabs defaultValue="personal" className="mt-4">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="personal">Personal</TabsTrigger>
-                <TabsTrigger value="employment">Employment</TabsTrigger>
-                <TabsTrigger value="emergency">Emergency</TabsTrigger>
-              </TabsList>
-              <TabsContent value="personal" className="space-y-4 mt-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={selectedEmployee.avatar_url || undefined} />
-                    <AvatarFallback className="text-lg">{getInitials(selectedEmployee.full_name)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-xl font-semibold">{selectedEmployee.full_name}</h3>
-                    <p className="text-muted-foreground">{selectedEmployee.employee_details?.designation}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Email</Label>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEmployee.email}</span>
+          {selectedEmployee && (() => {
+            const details = getDetails(selectedEmployee.employee_details);
+            const dept = getDepartment(selectedEmployee.department);
+            return (
+              <Tabs defaultValue="personal" className="mt-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="personal">Personal</TabsTrigger>
+                  <TabsTrigger value="employment">Employment</TabsTrigger>
+                  <TabsTrigger value="emergency">Emergency</TabsTrigger>
+                </TabsList>
+                <TabsContent value="personal" className="space-y-4 mt-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={selectedEmployee.avatar_url || undefined} />
+                      <AvatarFallback className="text-lg">{getInitials(selectedEmployee.full_name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-xl font-semibold">{selectedEmployee.full_name}</h3>
+                      <p className="text-muted-foreground">{details?.designation}</p>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Phone</Label>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEmployee.phone || 'Not provided'}</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Email</Label>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedEmployee.email}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Phone</Label>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedEmployee.phone || 'Not provided'}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Date of Birth</Label>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>{details?.date_of_birth || 'Not provided'}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Gender</Label>
+                      <span>{details?.gender || 'Not provided'}</span>
+                    </div>
+                    <div className="col-span-2 space-y-1">
+                      <Label className="text-muted-foreground">Address</Label>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>
+                          {details?.address 
+                            ? `${details.address}, ${details.city || ''}`
+                            : 'Not provided'}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Date of Birth</Label>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEmployee.employee_details?.date_of_birth || 'Not provided'}</span>
+                </TabsContent>
+                <TabsContent value="employment" className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Employee ID</Label>
+                      <span>{details?.employee_id || 'Not assigned'}</span>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Department</Label>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span>{dept?.name || 'Not assigned'}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Designation</Label>
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        <span>{details?.designation || 'Not assigned'}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Employment Type</Label>
+                      <Badge variant="secondary">{details?.employment_type || 'Full-time'}</Badge>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Date of Joining</Label>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>{details?.date_of_joining || 'Not provided'}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Work Location</Label>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span>{details?.work_location || 'Not provided'}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Gender</Label>
-                    <span>{selectedEmployee.employee_details?.gender || 'Not provided'}</span>
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-muted-foreground">Address</Label>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {selectedEmployee.employee_details?.address 
-                          ? `${selectedEmployee.employee_details.address}, ${selectedEmployee.employee_details.city || ''}`
-                          : 'Not provided'}
-                      </span>
+                </TabsContent>
+                <TabsContent value="emergency" className="space-y-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Contact Name</Label>
+                      <span>{details?.emergency_contact_name || 'Not provided'}</span>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Contact Phone</Label>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{details?.emergency_contact_phone || 'Not provided'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="employment" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Employee ID</Label>
-                    <span>{selectedEmployee.employee_details?.employee_id || 'Not assigned'}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Department</Label>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEmployee.department?.name || 'Not assigned'}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Designation</Label>
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEmployee.employee_details?.designation || 'Not assigned'}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Employment Type</Label>
-                    <Badge variant="secondary">{selectedEmployee.employee_details?.employment_type || 'Full-time'}</Badge>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Date of Joining</Label>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEmployee.employee_details?.date_of_joining || 'Not provided'}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Work Location</Label>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEmployee.employee_details?.work_location || 'Not provided'}</span>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="emergency" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Contact Name</Label>
-                    <span>{selectedEmployee.employee_details?.emergency_contact_name || 'Not provided'}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground">Contact Phone</Label>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedEmployee.employee_details?.emergency_contact_phone || 'Not provided'}</span>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          )}
+                </TabsContent>
+              </Tabs>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
