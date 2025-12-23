@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, Loader2, Calendar, Check, X, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Loader2, Calendar, Check, X, Clock, AlertCircle, Settings } from 'lucide-react';
+import LeaveTypeConfig from '@/components/hr/LeaveTypeConfig';
 
 interface LeaveType {
   id: string;
@@ -346,6 +347,7 @@ const LeaveManagementPage: React.FC = () => {
         <TabsList>
           <TabsTrigger value="my-requests">My Requests</TabsTrigger>
           {isCompanyAdmin() && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
+          {isCompanyAdmin() && <TabsTrigger value="config"><Settings className="h-4 w-4 mr-1" />Leave Types</TabsTrigger>}
         </TabsList>
         
         <TabsContent value="my-requests">
@@ -442,6 +444,12 @@ const LeaveManagementPage: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+        )}
+
+        {isCompanyAdmin() && (
+          <TabsContent value="config">
+            <LeaveTypeConfig />
           </TabsContent>
         )}
       </Tabs>
