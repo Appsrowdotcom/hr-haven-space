@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import type { Tables, Enums } from '@/integrations/supabase/types';
@@ -46,81 +46,73 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [enabledModules, setEnabledModules] = useState<ModuleCode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchPermissionsData = async (userId: string, companyId: string) => {
+  const fetchPermissionsData = useCallback(async (userId: string, companyId: string) => {
     setIsLoading(true);
     
     try {
-      // Fetch user roles with role details
-      const { data: userRolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select(`
-          role_id,
-          roles (*)
-        `)
-        .eq('user_id', userId);
+      // Fetch user roles and company modules in parallel
+      const [userRolesResult, modulesResult] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select(`role_id, roles (*)`)
+          .eq('user_id', userId),
+        supabase
+          .from('company_modules')
+          .select('module')
+          .eq('company_id', companyId)
+          .eq('is_enabled', true),
+      ]);
 
-      if (rolesError) {
-        console.error('Error fetching user roles:', rolesError);
-      } else if (userRolesData) {
-        const userRoles = userRolesData as unknown as UserRoleWithRole[];
-        const fetchedRoles = userRoles
+      // Process roles
+      let fetchedRoles: Role[] = [];
+      if (!userRolesResult.error && userRolesResult.data) {
+        const userRoles = userRolesResult.data as unknown as UserRoleWithRole[];
+        fetchedRoles = userRoles
           .map((ur) => ur.roles)
           .filter((r): r is Role => r !== null && r.is_active);
         setRoles(fetchedRoles);
-
-        // Get all role IDs to fetch permissions
-        const roleIds = fetchedRoles.map((r) => r.id);
-        
-        if (roleIds.length > 0) {
-          const { data: rolePermsData, error: permsError } = await supabase
-            .from('role_permissions')
-            .select(`
-              permission_id,
-              permissions (*)
-            `)
-            .in('role_id', roleIds);
-
-          if (permsError) {
-            console.error('Error fetching role permissions:', permsError);
-          } else if (rolePermsData) {
-            const rolePerms = rolePermsData as unknown as RolePermissionWithPermission[];
-            const fetchedPermissions = rolePerms
-              .map((rp) => rp.permissions)
-              .filter((p): p is Permission => p !== null);
-            
-            // Remove duplicates
-            const uniquePermissions = Array.from(
-              new Map(fetchedPermissions.map((p) => [p.id, p])).values()
-            );
-            setPermissions(uniquePermissions);
-          }
-        }
       }
 
-      // Fetch enabled modules for the company
-      const { data: modulesData, error: modulesError } = await supabase
-        .from('company_modules')
-        .select('module')
-        .eq('company_id', companyId)
-        .eq('is_enabled', true);
+      // Fetch permissions if we have roles
+      if (fetchedRoles.length > 0) {
+        const roleIds = fetchedRoles.map((r) => r.id);
+        const { data: rolePermsData, error: permsError } = await supabase
+          .from('role_permissions')
+          .select(`permission_id, permissions (*)`)
+          .in('role_id', roleIds);
 
-      if (modulesError) {
-        console.error('Error fetching company modules:', modulesError);
-      } else if (modulesData) {
-        setEnabledModules(modulesData.map((m) => m.module));
+        if (!permsError && rolePermsData) {
+          const rolePerms = rolePermsData as unknown as RolePermissionWithPermission[];
+          const fetchedPermissions = rolePerms
+            .map((rp) => rp.permissions)
+            .filter((p): p is Permission => p !== null);
+          
+          // Remove duplicates
+          const uniquePermissions = Array.from(
+            new Map(fetchedPermissions.map((p) => [p.id, p])).values()
+          );
+          setPermissions(uniquePermissions);
+        }
+      } else {
+        setPermissions([]);
+      }
+
+      // Process modules
+      if (!modulesResult.error && modulesResult.data) {
+        setEnabledModules(modulesResult.data.map((m) => m.module));
       }
     } catch (error) {
       console.error('Error fetching permissions data:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const refreshPermissions = async () => {
+  const refreshPermissions = useCallback(async () => {
     if (user && profile?.company_id) {
       await fetchPermissionsData(user.id, profile.company_id);
     }
-  };
+  }, [user, profile?.company_id, fetchPermissionsData]);
 
   useEffect(() => {
     if (user && profile?.company_id) {
@@ -131,38 +123,38 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setEnabledModules([]);
       setIsLoading(false);
     }
-  }, [user, profile?.company_id]);
+  }, [user, profile?.company_id, fetchPermissionsData]);
 
-  const hasRole = (roleName: string): boolean => {
+  const hasRole = useCallback((roleName: string): boolean => {
     return roles.some((r) => r.name === roleName);
-  };
+  }, [roles]);
 
-  const hasPermission = (permissionCode: string): boolean => {
+  const hasPermission = useCallback((permissionCode: string): boolean => {
     return permissions.some((p) => p.code === permissionCode);
-  };
+  }, [permissions]);
 
-  const isModuleEnabled = (moduleCode: ModuleCode): boolean => {
+  const isModuleEnabled = useCallback((moduleCode: ModuleCode): boolean => {
     return enabledModules.includes(moduleCode);
-  };
+  }, [enabledModules]);
 
-  const isCompanyAdmin = (): boolean => {
-    return hasRole('Company Admin');
-  };
+  const isCompanyAdmin = useCallback((): boolean => {
+    return roles.some((r) => r.name === 'Company Admin');
+  }, [roles]);
+
+  const value = useMemo(() => ({
+    roles,
+    permissions,
+    enabledModules,
+    isLoading,
+    hasRole,
+    hasPermission,
+    isModuleEnabled,
+    isCompanyAdmin,
+    refreshPermissions,
+  }), [roles, permissions, enabledModules, isLoading, hasRole, hasPermission, isModuleEnabled, isCompanyAdmin, refreshPermissions]);
 
   return (
-    <PermissionContext.Provider
-      value={{
-        roles,
-        permissions,
-        enabledModules,
-        isLoading,
-        hasRole,
-        hasPermission,
-        isModuleEnabled,
-        isCompanyAdmin,
-        refreshPermissions,
-      }}
-    >
+    <PermissionContext.Provider value={value}>
       {children}
     </PermissionContext.Provider>
   );

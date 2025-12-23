@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
@@ -13,6 +13,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, companyName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -43,19 +44,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
     return data;
-  };
+  }, []);
+
+  const refreshProfile = useCallback(async () => {
+    if (user) {
+      const profileData = await fetchProfile(user.id);
+      setProfile(profileData);
+    }
+  }, [user, fetchProfile]);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
 
         // Defer profile fetch with setTimeout to prevent deadlock
         if (session?.user) {
           setTimeout(() => {
-            fetchProfile(session.user.id).then(setProfile);
+            if (mounted) {
+              fetchProfile(session.user.id).then((p) => {
+                if (mounted) setProfile(p);
+              });
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -65,22 +81,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id).then((p) => {
-          setProfile(p);
-          setIsLoading(false);
+          if (mounted) {
+            setProfile(p);
+            setIsLoading(false);
+          }
         });
       } else {
         setIsLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile]);
 
-  const signUp = async (email: string, password: string, fullName: string, companyName: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName: string, companyName: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
 
@@ -92,8 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (companyError) {
-        // If company creation fails, check if it's a permission error (expected before user exists)
-        // We'll handle this differently - create user first, then company via edge function or trigger
         console.error('Company creation error:', companyError);
       }
 
@@ -118,9 +139,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       return { error: error as Error };
     }
-  };
+  }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -135,27 +156,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       return { error: error as Error };
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
     setProfile(null);
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    user,
+    session,
+    profile,
+    isLoading,
+    signUp,
+    signIn,
+    signOut,
+    refreshProfile,
+  }), [user, session, profile, isLoading, signUp, signIn, signOut, refreshProfile]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        profile,
-        isLoading,
-        signUp,
-        signIn,
-        signOut,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

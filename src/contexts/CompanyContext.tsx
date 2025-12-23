@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import type { Tables } from '@/integrations/supabase/types';
@@ -32,14 +32,14 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchCompanyData = async (companyId: string) => {
+  const fetchCompanyData = useCallback(async (companyId: string) => {
     setIsLoading(true);
     
     try {
       // Fetch company, branding, and departments in parallel
       const [companyResult, brandingResult, departmentsResult] = await Promise.all([
         supabase.from('companies').select('*').eq('id', companyId).single(),
-        supabase.from('company_branding').select('*').eq('company_id', companyId).single(),
+        supabase.from('company_branding').select('*').eq('company_id', companyId).maybeSingle(),
         supabase.from('departments').select('*').eq('company_id', companyId),
       ]);
 
@@ -59,13 +59,13 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const refreshCompany = async () => {
+  const refreshCompany = useCallback(async () => {
     if (profile?.company_id) {
       await fetchCompanyData(profile.company_id);
     }
-  };
+  }, [profile?.company_id, fetchCompanyData]);
 
   useEffect(() => {
     if (profile?.company_id) {
@@ -76,18 +76,18 @@ export const CompanyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setDepartments([]);
       setIsLoading(false);
     }
-  }, [profile?.company_id]);
+  }, [profile?.company_id, fetchCompanyData]);
+
+  const value = useMemo(() => ({
+    company,
+    branding,
+    departments,
+    isLoading,
+    refreshCompany,
+  }), [company, branding, departments, isLoading, refreshCompany]);
 
   return (
-    <CompanyContext.Provider
-      value={{
-        company,
-        branding,
-        departments,
-        isLoading,
-        refreshCompany,
-      }}
-    >
+    <CompanyContext.Provider value={value}>
       {children}
     </CompanyContext.Provider>
   );

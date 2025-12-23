@@ -1,28 +1,35 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/contexts/PermissionContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { Enums } from '@/integrations/supabase/types';
 
 type ModuleCode = Enums<'module_code'>;
 
 interface ProtectedRouteProps {
   children?: React.ReactNode;
-  /** Permission required to access route */
   permission?: string;
-  /** Multiple permissions - user must have ALL */
   permissions?: string[];
-  /** Multiple permissions - user must have ANY */
   anyPermission?: string[];
-  /** Module that must be enabled */
   module?: ModuleCode;
-  /** Custom redirect for auth failures */
   authRedirect?: string;
-  /** Custom redirect for permission failures */
   permissionRedirect?: string;
-  /** Custom redirect for module failures */
   moduleRedirect?: string;
 }
+
+const LoadingSkeleton = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex flex-col items-center gap-4">
+      <div className="flex gap-2">
+        <Skeleton className="h-3 w-3 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+        <Skeleton className="h-3 w-3 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+        <Skeleton className="h-3 w-3 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+      </div>
+      <p className="text-sm text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
 
 /**
  * Combined route guard for authentication, permissions, and modules.
@@ -42,39 +49,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { hasPermission, isModuleEnabled, isCompanyAdmin, isLoading: permLoading } = usePermissions();
   const location = useLocation();
 
-  // Show loading while checking auth
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+  // Memoize access check to prevent recalculation
+  const accessCheck = useMemo(() => {
+    if (authLoading || permLoading) return { loading: true };
+    if (!user) return { redirect: authRedirect };
+    
+    // Check module enablement
+    if (module && !isModuleEnabled(module)) {
+      return { redirect: moduleRedirect, state: { module } };
+    }
 
-  // Redirect if not authenticated
-  if (!user) {
-    return <Navigate to={authRedirect} state={{ from: location }} replace />;
-  }
+    // Company admins bypass permission checks
+    const isAdmin = isCompanyAdmin();
+    if (isAdmin) return { allowed: true };
 
-  // Show loading while checking permissions
-  if (permLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse text-muted-foreground">Checking access...</div>
-      </div>
-    );
-  }
-
-  // Check module enablement
-  if (module && !isModuleEnabled(module)) {
-    return <Navigate to={moduleRedirect} state={{ from: location, module }} replace />;
-  }
-
-  // Company admins bypass permission checks
-  const isAdmin = isCompanyAdmin();
-
-  // Check permissions (unless admin)
-  if (!isAdmin) {
+    // Check permissions
     let hasAccess = true;
 
     if (permission) {
@@ -90,11 +79,40 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
 
     if (!hasAccess) {
-      return <Navigate to={permissionRedirect} state={{ from: location }} replace />;
+      return { redirect: permissionRedirect };
     }
+
+    return { allowed: true };
+  }, [
+    authLoading,
+    permLoading,
+    user,
+    module,
+    permission,
+    permissions,
+    anyPermission,
+    isModuleEnabled,
+    isCompanyAdmin,
+    hasPermission,
+    authRedirect,
+    permissionRedirect,
+    moduleRedirect,
+  ]);
+
+  if (accessCheck.loading) {
+    return <LoadingSkeleton />;
   }
 
-  // Render children or Outlet for nested routes
+  if (accessCheck.redirect) {
+    return (
+      <Navigate 
+        to={accessCheck.redirect} 
+        state={{ from: location, ...accessCheck.state }} 
+        replace 
+      />
+    );
+  }
+
   return <>{children ?? <Outlet />}</>;
 };
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 
@@ -33,7 +33,7 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [superAdminData, setSuperAdminData] = useState<SuperAdmin | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkSuperAdminStatus = async () => {
+  const checkSuperAdminStatus = useCallback(async () => {
     if (!user) {
       setIsSuperAdmin(false);
       setSuperAdminData(null);
@@ -42,7 +42,6 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     try {
-      // Check if user is in super_admins table
       const { data, error } = await supabase
         .from('super_admins')
         .select('*')
@@ -51,7 +50,6 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         .maybeSingle();
 
       if (error) {
-        // If error is about RLS (user can't access super_admins), they're not a super admin
         console.log('Super admin check:', error.message);
         setIsSuperAdmin(false);
         setSuperAdminData(null);
@@ -69,26 +67,26 @@ export const SuperAdminProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  const refreshSuperAdminStatus = async () => {
+  const refreshSuperAdminStatus = useCallback(async () => {
     setIsLoading(true);
     await checkSuperAdminStatus();
-  };
+  }, [checkSuperAdminStatus]);
 
   useEffect(() => {
     checkSuperAdminStatus();
-  }, [user]);
+  }, [checkSuperAdminStatus]);
+
+  const value = useMemo(() => ({
+    isSuperAdmin,
+    superAdminData,
+    isLoading,
+    refreshSuperAdminStatus,
+  }), [isSuperAdmin, superAdminData, isLoading, refreshSuperAdminStatus]);
 
   return (
-    <SuperAdminContext.Provider
-      value={{
-        isSuperAdmin,
-        superAdminData,
-        isLoading,
-        refreshSuperAdminStatus,
-      }}
-    >
+    <SuperAdminContext.Provider value={value}>
       {children}
     </SuperAdminContext.Provider>
   );
