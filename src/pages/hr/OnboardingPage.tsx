@@ -19,8 +19,8 @@ import { Plus, Loader2, CheckCircle2, Circle, ListChecks, Users, Trash2 } from '
 interface OnboardingTemplate {
   id: string;
   name: string;
-  description: string | null;
-  is_active: boolean;
+  description?: string | null;
+  is_active?: boolean;
   items?: OnboardingTemplateItem[];
 }
 
@@ -40,7 +40,7 @@ interface EmployeeOnboarding {
   status: string;
   started_at: string;
   profile?: { full_name: string; email: string };
-  template?: OnboardingTemplate;
+  template?: { id?: string; name: string; description?: string | null; is_active?: boolean };
   items?: EmployeeOnboardingItem[];
 }
 
@@ -55,7 +55,7 @@ interface EmployeeOnboardingItem {
 const OnboardingPage: React.FC = () => {
   const { user } = useAuth();
   const { company } = useCompany();
-  const { isAdmin } = usePermissions();
+  const { isCompanyAdmin } = usePermissions();
   const [templates, setTemplates] = useState<OnboardingTemplate[]>([]);
   const [employeeOnboardings, setEmployeeOnboardings] = useState<EmployeeOnboarding[]>([]);
   const [myOnboarding, setMyOnboarding] = useState<EmployeeOnboarding | null>(null);
@@ -89,7 +89,7 @@ const OnboardingPage: React.FC = () => {
   };
 
   const fetchEmployeeOnboardings = async () => {
-    if (!company?.id || !isAdmin) return;
+    if (!company?.id || !isCompanyAdmin()) return;
     
     const { data, error } = await supabase
       .from('employee_onboarding')
@@ -139,7 +139,7 @@ const OnboardingPage: React.FC = () => {
     if (company?.id && user?.id) {
       loadData();
     }
-  }, [company?.id, user?.id, isAdmin]);
+  }, [company?.id, user?.id, isCompanyAdmin]);
 
   const handleCreateTemplate = async () => {
     if (!company?.id || !templateForm.name) return;
@@ -247,7 +247,7 @@ const OnboardingPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-foreground">Onboarding</h1>
           <p className="text-muted-foreground">Manage employee onboarding checklists</p>
         </div>
-        {isAdmin && (
+        {isCompanyAdmin() && (
           <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -331,7 +331,7 @@ const OnboardingPage: React.FC = () => {
         </Card>
       )}
 
-      {isAdmin && (
+      {isCompanyAdmin() && (
         <Tabs defaultValue="templates">
           <TabsList>
             <TabsTrigger value="templates">Templates</TabsTrigger>

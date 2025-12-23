@@ -31,6 +31,12 @@ import {
   RolesPermissionsPage,
   ModulesPage,
 } from "./pages/admin";
+import {
+  EmployeeDirectoryPage,
+  LeaveManagementPage,
+  AttendancePage,
+  OnboardingPage,
+} from "./pages/hr";
 
 const queryClient = new QueryClient();
 
@@ -68,20 +74,20 @@ const App = () => (
                     
                     {/* HR Module routes */}
                     <Route element={<ProtectedRoute module="HR_CORE" />}>
-                      <Route path="/employees" element={<Dashboard />} />
-                      <Route path="/departments" element={<Dashboard />} />
-                      <Route path="/positions" element={<Dashboard />} />
+                      <Route path="/hr/employees" element={<EmployeeDirectoryPage />} />
+                      <Route path="/hr/onboarding" element={<OnboardingPage />} />
                     </Route>
 
                     {/* Attendance Module routes */}
                     <Route element={<ProtectedRoute module="ATTENDANCE" />}>
-                      <Route path="/attendance/*" element={<Dashboard />} />
+                      <Route path="/hr/attendance" element={<AttendancePage />} />
                     </Route>
 
                     {/* Leave Module routes */}
                     <Route element={<ProtectedRoute module="LEAVE" />}>
-                      <Route path="/leave/*" element={<Dashboard />} />
+                      <Route path="/hr/leave" element={<LeaveManagementPage />} />
                     </Route>
+
 
                     {/* Finance Module routes */}
                     <Route element={<ProtectedRoute module="FINANCE" />}>

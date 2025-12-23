@@ -19,8 +19,8 @@ import { Plus, Loader2, Calendar, Check, X, Clock, AlertCircle } from 'lucide-re
 interface LeaveType {
   id: string;
   name: string;
-  description: string | null;
-  days_per_year: number;
+  description?: string | null;
+  days_per_year?: number;
   is_paid: boolean;
 }
 
@@ -49,7 +49,7 @@ interface LeaveBalance {
 const LeaveManagementPage: React.FC = () => {
   const { user } = useAuth();
   const { company } = useCompany();
-  const { isAdmin } = usePermissions();
+  const { isCompanyAdmin } = usePermissions();
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
   const [allRequests, setAllRequests] = useState<LeaveRequest[]>([]);
@@ -98,13 +98,13 @@ const LeaveManagementPage: React.FC = () => {
   };
 
   const fetchAllRequests = async () => {
-    if (!company?.id || !isAdmin) return;
+    if (!company?.id || !isCompanyAdmin()) return;
     const { data, error } = await supabase
       .from('leave_requests')
       .select(`
         *,
         leave_type:leave_types(id, name, is_paid),
-        profile:profiles(full_name, email)
+        profile:profiles!leave_requests_profile_id_fkey(full_name, email)
       `)
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
@@ -150,7 +150,7 @@ const LeaveManagementPage: React.FC = () => {
     if (company?.id && user?.id) {
       loadData();
     }
-  }, [company?.id, user?.id, isAdmin]);
+  }, [company?.id, user?.id, isCompanyAdmin]);
 
   const calculateDays = (start: string, end: string) => {
     if (!start || !end) return 0;
@@ -345,7 +345,7 @@ const LeaveManagementPage: React.FC = () => {
       <Tabs defaultValue="my-requests">
         <TabsList>
           <TabsTrigger value="my-requests">My Requests</TabsTrigger>
-          {isAdmin && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
+          {isCompanyAdmin() && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
         </TabsList>
         
         <TabsContent value="my-requests">
@@ -387,7 +387,7 @@ const LeaveManagementPage: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {isAdmin && (
+        {isCompanyAdmin() && (
           <TabsContent value="pending-approvals">
             <Card>
               <CardHeader>
