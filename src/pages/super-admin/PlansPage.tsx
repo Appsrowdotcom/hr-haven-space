@@ -12,6 +12,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,6 +48,8 @@ export default function PlansPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -133,21 +145,25 @@ export default function PlansPage() {
     }
   };
 
-  const handleDelete = async (planId: string) => {
-    if (!confirm('Are you sure you want to delete this plan?')) return;
-
+  const handleDeletePlan = async () => {
+    if (!planToDelete) return;
+    
+    setIsDeleting(true);
     try {
       const { error } = await supabase
         .from('subscription_plans')
         .delete()
-        .eq('id', planId);
+        .eq('id', planToDelete.id);
 
       if (error) throw error;
-      toast.success('Plan deleted successfully');
+      toast.success(`Plan "${planToDelete.name}" deleted successfully`);
+      setPlanToDelete(null);
       fetchPlans();
     } catch (error) {
       console.error('Error deleting plan:', error);
       toast.error('Failed to delete plan');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -310,7 +326,7 @@ export default function PlansPage() {
                   variant="outline"
                   size="sm"
                   className="text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(plan.id)}
+                  onClick={() => setPlanToDelete(plan)}
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
@@ -319,6 +335,29 @@ export default function PlansPage() {
           </Card>
         ))}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Plan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{planToDelete?.name}"? This action cannot be undone.
+              Companies currently using this plan will need to be assigned a new plan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePlan}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
