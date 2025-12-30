@@ -26,8 +26,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+// All available modules
+const ALL_MODULES = [
+  { code: 'HR_CORE', name: 'HR Core', description: 'Employee management, directory', required: true },
+  { code: 'ATTENDANCE', name: 'Attendance', description: 'Time tracking, check-in/out' },
+  { code: 'LEAVE', name: 'Leave Management', description: 'Leave requests, approvals' },
+  { code: 'FINANCE', name: 'Finance', description: 'Expenses, payroll' },
+  { code: 'REVENUE', name: 'Revenue & Collections', description: 'Revenue tracking' },
+  { code: 'SALES_CRM', name: 'Sales CRM', description: 'Customer relationships' },
+  { code: 'COMPLIANCE', name: 'Compliance', description: 'Regulatory compliance' },
+  { code: 'ADMIN', name: 'Admin & Settings', description: 'Company configuration', required: true },
+];
 
 interface Plan {
   id: string;
@@ -58,6 +71,7 @@ export default function PlansPage() {
     max_users: '',
     max_departments: '',
     is_active: true,
+    allowed_modules: ['HR_CORE', 'ADMIN'] as string[],
   });
 
   const fetchPlans = async () => {
@@ -92,6 +106,7 @@ export default function PlansPage() {
         max_users: plan.max_users?.toString() || '',
         max_departments: plan.max_departments?.toString() || '',
         is_active: plan.is_active,
+        allowed_modules: plan.allowed_modules || ['HR_CORE', 'ADMIN'],
       });
     } else {
       setEditingPlan(null);
@@ -103,9 +118,22 @@ export default function PlansPage() {
         max_users: '',
         max_departments: '',
         is_active: true,
+        allowed_modules: ['HR_CORE', 'ADMIN'],
       });
     }
     setIsDialogOpen(true);
+  };
+
+  const toggleModule = (moduleCode: string) => {
+    const module = ALL_MODULES.find(m => m.code === moduleCode);
+    if (module?.required) return; // Can't toggle required modules
+    
+    setFormData(prev => ({
+      ...prev,
+      allowed_modules: prev.allowed_modules.includes(moduleCode)
+        ? prev.allowed_modules.filter(m => m !== moduleCode)
+        : [...prev.allowed_modules, moduleCode]
+    }));
   };
 
   const handleSave = async () => {
@@ -118,6 +146,7 @@ export default function PlansPage() {
         max_users: formData.max_users ? parseInt(formData.max_users) : null,
         max_departments: formData.max_departments ? parseInt(formData.max_departments) : null,
         is_active: formData.is_active,
+        allowed_modules: formData.allowed_modules,
       };
 
       if (editingPlan) {
@@ -131,7 +160,7 @@ export default function PlansPage() {
       } else {
         const { error } = await supabase
           .from('subscription_plans')
-          .insert({ ...payload, allowed_modules: ['HR_CORE', 'ADMIN'], sort_order: plans.length + 1 });
+          .insert({ ...payload, sort_order: plans.length + 1 });
 
         if (error) throw error;
         toast.success('Plan created successfully');
@@ -257,6 +286,34 @@ export default function PlansPage() {
                   />
                 </div>
               </div>
+              
+              {/* Module Selection */}
+              <div className="grid gap-2">
+                <Label>Included Modules</Label>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                  {ALL_MODULES.map((module) => (
+                    <div key={module.code} className="flex items-start space-x-2">
+                      <Checkbox
+                        id={`module-${module.code}`}
+                        checked={formData.allowed_modules.includes(module.code)}
+                        onCheckedChange={() => toggleModule(module.code)}
+                        disabled={module.required}
+                      />
+                      <div className="grid gap-0.5 leading-none">
+                        <label
+                          htmlFor={`module-${module.code}`}
+                          className={`text-sm font-medium cursor-pointer ${module.required ? 'text-muted-foreground' : ''}`}
+                        >
+                          {module.name}
+                          {module.required && <span className="text-xs ml-1">(Required)</span>}
+                        </label>
+                        <span className="text-xs text-muted-foreground">{module.description}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="is_active">Active</Label>
                 <Switch
