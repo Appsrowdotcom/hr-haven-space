@@ -198,6 +198,44 @@ export type Database = {
         }
         Relationships: []
       }
+      company_attendance_settings: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          punch_api_enabled: boolean
+          punch_api_key: string
+          updated_at: string
+          webhook_url: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          punch_api_enabled?: boolean
+          punch_api_key: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          punch_api_enabled?: boolean
+          punch_api_key?: string
+          updated_at?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_attendance_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_branding: {
         Row: {
           accent_color: string | null

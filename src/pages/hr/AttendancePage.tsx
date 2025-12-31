@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/contexts/PermissionContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2, Clock, LogIn, LogOut, Timer, CalendarDays, Users, FileSpreadsheet, CreditCard, History } from 'lucide-react';
+import { Loader2, Clock, LogIn, LogOut, Timer, CalendarDays, Users, FileSpreadsheet, CreditCard, History, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import TeamAttendanceView from '@/components/hr/TeamAttendanceView';
 import AttendanceReports from '@/components/hr/AttendanceReports';
-
+import { AttendanceSettings } from '@/components/hr/AttendanceSettings';
 interface AttendanceRecord {
   id: string;
   date: string;
@@ -34,8 +35,10 @@ interface PunchRecord {
 
 const AttendancePage: React.FC = () => {
   const { user } = useAuth();
+  const { company } = useCompany();
   const { isCompanyAdmin, hasRole, hasPermission } = usePermissions();
   const canViewTeamAttendance = isCompanyAdmin() || hasRole('HR') || hasRole('Hr manager') || hasPermission('attendance.view_reports');
+  const canManageSettings = isCompanyAdmin();
   const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
   const [todayPunches, setTodayPunches] = useState<PunchRecord[]>([]);
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
@@ -208,6 +211,7 @@ const AttendancePage: React.FC = () => {
           <TabsTrigger value="punch-history"><History className="mr-2 h-4 w-4" />Punch Log</TabsTrigger>
           {canViewTeamAttendance && <TabsTrigger value="team"><Users className="mr-2 h-4 w-4" />Team</TabsTrigger>}
           {canViewTeamAttendance && <TabsTrigger value="reports"><FileSpreadsheet className="mr-2 h-4 w-4" />Reports</TabsTrigger>}
+          {canManageSettings && <TabsTrigger value="settings"><Settings className="mr-2 h-4 w-4" />API Settings</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="my-attendance" className="space-y-6 mt-6">
@@ -348,6 +352,11 @@ const AttendancePage: React.FC = () => {
 
         {canViewTeamAttendance && <TabsContent value="team" className="mt-6"><TeamAttendanceView /></TabsContent>}
         {canViewTeamAttendance && <TabsContent value="reports" className="mt-6"><AttendanceReports /></TabsContent>}
+        {canManageSettings && company && (
+          <TabsContent value="settings" className="mt-6">
+            <AttendanceSettings companyId={company.id} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
