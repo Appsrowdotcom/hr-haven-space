@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Loader2, Pencil, Trash2, Calendar } from 'lucide-react';
+import { leaveTypeSchema, getValidationError } from '@/lib/validations';
 
 interface LeaveType {
   id: string;
@@ -46,7 +47,7 @@ const LeaveTypeConfig: React.FC = () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('leave_types')
-      .select('*')
+      .select('id, name, description, days_per_year, is_paid, is_carry_forward, max_carry_forward_days, is_active, company_id')
       .eq('company_id', company.id)
       .order('name');
 
@@ -90,7 +91,15 @@ const LeaveTypeConfig: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!company?.id || !form.name.trim()) return;
+    if (!company?.id) return;
+    
+    // Validate form with Zod schema
+    const validationResult = leaveTypeSchema.safeParse(form);
+    const validationError = getValidationError(validationResult);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
 
     setSaving(true);
     try {
