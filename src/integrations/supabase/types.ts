@@ -755,17 +755,74 @@ export type Database = {
           },
         ]
       }
+      leave_policies: {
+        Row: {
+          allow_negative_balance: boolean
+          company_id: string
+          created_at: string
+          emergency_default_unpaid: boolean
+          id: string
+          leave_credit_start_month: number
+          min_days_advance_planned: number
+          probation_months: number
+          unplanned_default_unpaid: boolean
+          updated_at: string
+        }
+        Insert: {
+          allow_negative_balance?: boolean
+          company_id: string
+          created_at?: string
+          emergency_default_unpaid?: boolean
+          id?: string
+          leave_credit_start_month?: number
+          min_days_advance_planned?: number
+          probation_months?: number
+          unplanned_default_unpaid?: boolean
+          updated_at?: string
+        }
+        Update: {
+          allow_negative_balance?: boolean
+          company_id?: string
+          created_at?: string
+          emergency_default_unpaid?: boolean
+          id?: string
+          leave_credit_start_month?: number
+          min_days_advance_planned?: number
+          probation_months?: number
+          unplanned_default_unpaid?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_policies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          auto_unpaid_reason: string | null
           created_at: string
           end_date: string
+          hr_approved: boolean | null
+          hr_approved_at: string | null
+          hr_approved_by: string | null
           id: string
+          is_paid: boolean
           leave_type_id: string
+          manager_approved: boolean | null
+          manager_approved_at: string | null
+          manager_approved_by: string | null
           profile_id: string
           reason: string | null
           rejection_reason: string | null
+          request_type: string
+          requires_hr_approval: boolean
           start_date: string
           status: string
           total_days: number
@@ -774,13 +831,23 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          auto_unpaid_reason?: string | null
           created_at?: string
           end_date: string
+          hr_approved?: boolean | null
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
           id?: string
+          is_paid?: boolean
           leave_type_id: string
+          manager_approved?: boolean | null
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
           profile_id: string
           reason?: string | null
           rejection_reason?: string | null
+          request_type?: string
+          requires_hr_approval?: boolean
           start_date: string
           status?: string
           total_days: number
@@ -789,13 +856,23 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          auto_unpaid_reason?: string | null
           created_at?: string
           end_date?: string
+          hr_approved?: boolean | null
+          hr_approved_at?: string | null
+          hr_approved_by?: string | null
           id?: string
+          is_paid?: boolean
           leave_type_id?: string
+          manager_approved?: boolean | null
+          manager_approved_at?: string | null
+          manager_approved_by?: string | null
           profile_id?: string
           reason?: string | null
           rejection_reason?: string | null
+          request_type?: string
+          requires_hr_approval?: boolean
           start_date?: string
           status?: string
           total_days?: number
@@ -810,10 +887,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leave_requests_hr_approved_by_fkey"
+            columns: ["hr_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leave_requests_leave_type_id_fkey"
             columns: ["leave_type_id"]
             isOneToOne: false
             referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_manager_approved_by_fkey"
+            columns: ["manager_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1334,6 +1425,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_months_employed: { Args: { _profile_id: string }; Returns: number }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_permission: {
         Args: { _permission_code: string; _user_id: string }
@@ -1344,6 +1436,10 @@ export type Database = {
         Returns: boolean
       }
       is_company_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_eligible_for_paid_leave: {
+        Args: { _profile_id: string }
+        Returns: boolean
+      }
       is_module_enabled: {
         Args: {
           _company_id: string
