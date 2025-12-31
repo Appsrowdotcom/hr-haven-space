@@ -73,7 +73,9 @@ const LeaveManagementPage: React.FC = () => {
   
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [myRequests, setMyRequests] = useState<LeaveRequest[]>([]);
-  const [allRequests, setAllRequests] = useState<LeaveRequest[]>([]);
+  const [pendingForManager, setPendingForManager] = useState<LeaveRequest[]>([]);
+  const [pendingForHR, setPendingForHR] = useState<LeaveRequest[]>([]);
+  const [managedDepartmentIds, setManagedDepartmentIds] = useState<string[]>([]);
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
@@ -113,20 +115,71 @@ const LeaveManagementPage: React.FC = () => {
     else setMyRequests(data || []);
   };
 
-  const fetchAllRequests = async () => {
-    if (!company?.id || !canManageLeave) return;
+  // Fetch departments where current user is the head (for manager approvals)
+  const fetchManagedDepartments = async () => {
+    if (!user?.id) return;
+    const { data, error } = await supabase
+      .from('departments')
+      .select('id')
+      .eq('head_id', user.id);
+    
+    if (error) console.error('Error fetching managed departments:', error);
+    else setManagedDepartmentIds(data?.map(d => d.id) || []);
+    return data?.map(d => d.id) || [];
+  };
+
+  // Fetch pending requests for manager approval (employees in departments user heads)
+  const fetchPendingForManager = async (deptIds: string[]) => {
+    if (!user?.id || deptIds.length === 0) {
+      setPendingForManager([]);
+      return;
+    }
+    
     const { data, error } = await supabase
       .from('leave_requests')
       .select(`
         *,
         leave_type:leave_types(id, name, is_paid),
-        profile:profiles!leave_requests_profile_id_fkey(full_name, email, employee_category)
+        profile:profiles!leave_requests_profile_id_fkey(full_name, email, employee_category, department_id)
       `)
       .eq('status', 'pending')
+      .is('manager_approved', null)
       .order('created_at', { ascending: false });
     
-    if (error) console.error('Error fetching all requests:', error);
-    else setAllRequests(data || []);
+    if (error) {
+      console.error('Error fetching manager pending requests:', error);
+      setPendingForManager([]);
+    } else {
+      // Filter to only show employees from departments this user heads
+      const filtered = (data || []).filter(req => 
+        req.profile?.department_id && deptIds.includes(req.profile.department_id)
+      );
+      setPendingForManager(filtered);
+    }
+  };
+
+  // Fetch pending requests for HR approval
+  const fetchPendingForHR = async () => {
+    if (!isHR && !isCompanyAdmin()) {
+      setPendingForHR([]);
+      return;
+    }
+    
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .select(`
+        *,
+        leave_type:leave_types(id, name, is_paid),
+        profile:profiles!leave_requests_profile_id_fkey(full_name, email, employee_category, department_id)
+      `)
+      .eq('status', 'pending')
+      .eq('requires_hr_approval', true)
+      .eq('manager_approved', true)
+      .is('hr_approved', null)
+      .order('created_at', { ascending: false });
+    
+    if (error) console.error('Error fetching HR pending requests:', error);
+    else setPendingForHR(data || []);
   };
 
   const fetchLeaveBalances = async () => {
@@ -145,20 +198,32 @@ const LeaveManagementPage: React.FC = () => {
     else setLeaveBalances(data || []);
   };
 
+  const refreshPendingRequests = async () => {
+    const deptIds = managedDepartmentIds.length > 0 
+      ? managedDepartmentIds 
+      : await fetchManagedDepartments() || [];
+    await Promise.all([
+      fetchPendingForManager(deptIds),
+      fetchPendingForHR(),
+    ]);
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
+      const deptIds = await fetchManagedDepartments();
       await Promise.all([
         fetchLeaveTypes(),
         fetchMyRequests(),
-        fetchAllRequests(),
+        fetchPendingForManager(deptIds || []),
+        fetchPendingForHR(),
         fetchLeaveBalances(),
       ]);
       setIsLoading(false);
     };
     
     if (company?.id && user?.id) loadData();
-  }, [company?.id, user?.id, canManageLeave]);
+  }, [company?.id, user?.id, isHR]);
 
   const calculateDays = (start: string, end: string) => {
     if (!start || !end) return 0;
@@ -264,8 +329,11 @@ const LeaveManagementPage: React.FC = () => {
         updateData.manager_approved_at = new Date().toISOString();
       }
 
-      // Check if both approvals are done
-      const request = allRequests.find(r => r.id === requestId);
+      // Find the request from the correct list
+      const request = asHR 
+        ? pendingForHR.find(r => r.id === requestId)
+        : pendingForManager.find(r => r.id === requestId);
+        
       if (request) {
         const managerApproved = asHR ? request.manager_approved : (action === 'approved');
         const hrApproved = asHR ? (action === 'approved') : request.hr_approved;
@@ -293,7 +361,7 @@ const LeaveManagementPage: React.FC = () => {
       if (error) throw error;
       
       toast.success(`Leave request ${action}`);
-      fetchAllRequests();
+      refreshPendingRequests();
     } catch (error: any) {
       toast.error(error.message || 'Failed to update leave request');
     }
@@ -308,7 +376,7 @@ const LeaveManagementPage: React.FC = () => {
 
       if (error) throw error;
       toast.success(`Leave marked as ${isPaid ? 'Paid' : 'Unpaid'}`);
-      fetchAllRequests();
+      refreshPendingRequests();
     } catch (error: any) {
       toast.error('Failed to update leave');
     }
@@ -560,7 +628,16 @@ const LeaveManagementPage: React.FC = () => {
       <Tabs defaultValue="my-requests">
         <TabsList className="flex-wrap">
           <TabsTrigger value="my-requests">My Requests</TabsTrigger>
-          {canManageLeave && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
+          {(managedDepartmentIds.length > 0 || isHR || isCompanyAdmin()) && (
+            <TabsTrigger value="pending-approvals">
+              Pending Approvals
+              {(pendingForManager.length + pendingForHR.length) > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 min-w-5 text-xs">
+                  {pendingForManager.length + pendingForHR.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          )}
           {canManageLeave && <TabsTrigger value="calendar"><CalendarDays className="h-4 w-4 mr-1" />Calendar</TabsTrigger>}
           {canConfigureLeaveTypes && <TabsTrigger value="config"><Settings className="h-4 w-4 mr-1" />Leave Types</TabsTrigger>}
           {canConfigureLeaveTypes && <TabsTrigger value="policy"><ShieldAlert className="h-4 w-4 mr-1" />Policy</TabsTrigger>}
@@ -609,122 +686,169 @@ const LeaveManagementPage: React.FC = () => {
           </Card>
         </TabsContent>
 
-        {canManageLeave && (
+        {(managedDepartmentIds.length > 0 || isHR || isCompanyAdmin()) && (
           <TabsContent value="pending-approvals">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Approvals</CardTitle>
-                <CardDescription>Review and approve leave requests from your team</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {allRequests.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Check className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No pending requests</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Employee</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Request Type</TableHead>
-                        <TableHead>Paid</TableHead>
-                        <TableHead>Approvals</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allRequests.map((request) => (
-                        <TableRow key={request.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{request.profile?.full_name}</p>
-                              <p className="text-xs text-muted-foreground capitalize">{request.profile?.employee_category}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{request.leave_type?.name}</TableCell>
-                          <TableCell>
-                            <div>
-                              <p>{request.start_date} to {request.end_date}</p>
-                              <p className="text-xs text-muted-foreground">{request.total_days} days</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{getRequestTypeBadge(request.request_type as RequestType)}</TableCell>
-                          <TableCell>
-                            {isHR ? (
-                              <div className="flex items-center gap-2">
-                                <Switch
-                                  checked={request.is_paid}
-                                  onCheckedChange={(checked) => handleTogglePaid(request.id, checked)}
-                                />
-                                <span className="text-xs">{request.is_paid ? 'Paid' : 'Unpaid'}</span>
-                              </div>
-                            ) : (
-                              getPaidBadge(request.is_paid)
-                            )}
-                            {request.auto_unpaid_reason && (
-                              <p className="text-xs text-muted-foreground mt-1">{request.auto_unpaid_reason}</p>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1 text-xs">
-                              <div className="flex items-center gap-1">
-                                Manager: {request.manager_approved === true ? (
-                                  <Check className="h-3 w-3 text-green-600" />
-                                ) : request.manager_approved === false ? (
-                                  <X className="h-3 w-3 text-red-600" />
-                                ) : (
-                                  <Clock className="h-3 w-3 text-amber-600" />
-                                )}
-                              </div>
-                              {request.requires_hr_approval && (
-                                <div className="flex items-center gap-1">
-                                  HR: {request.hr_approved === true ? (
-                                    <Check className="h-3 w-3 text-green-600" />
-                                  ) : request.hr_approved === false ? (
-                                    <X className="h-3 w-3 text-red-600" />
-                                  ) : (
-                                    <Clock className="h-3 w-3 text-amber-600" />
-                                  )}
+            <div className="space-y-6">
+              {/* Manager Approvals - Only show if user heads any department */}
+              {managedDepartmentIds.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Badge variant="outline">Department Head</Badge>
+                      Manager Approvals
+                    </CardTitle>
+                    <CardDescription>Leave requests from employees in your department(s) awaiting your approval</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {pendingForManager.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Check className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No pending manager approvals</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Employee</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Duration</TableHead>
+                            <TableHead>Request Type</TableHead>
+                            <TableHead>Paid</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pendingForManager.map((request) => (
+                            <TableRow key={request.id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{request.profile?.full_name}</p>
+                                  <p className="text-xs text-muted-foreground capitalize">{request.profile?.employee_category}</p>
                                 </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              {/* Manager Approval */}
-                              {request.manager_approved === null && (
-                                <>
+                              </TableCell>
+                              <TableCell>{request.leave_type?.name}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <p>{request.start_date} to {request.end_date}</p>
+                                  <p className="text-xs text-muted-foreground">{request.total_days} days</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>{getRequestTypeBadge(request.request_type as RequestType)}</TableCell>
+                              <TableCell>
+                                {getPaidBadge(request.is_paid)}
+                                {request.auto_unpaid_reason && (
+                                  <p className="text-xs text-muted-foreground mt-1">{request.auto_unpaid_reason}</p>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
                                   <Button size="sm" onClick={() => handleApproveReject(request.id, 'approved', false)}>
-                                    <Check className="h-4 w-4" />
+                                    <Check className="h-4 w-4 mr-1" /> Approve
                                   </Button>
                                   <Button size="sm" variant="destructive" onClick={() => handleApproveReject(request.id, 'rejected', false)}>
-                                    <X className="h-4 w-4" />
+                                    <X className="h-4 w-4 mr-1" /> Reject
                                   </Button>
-                                </>
-                              )}
-                              {/* HR Approval (only for HR users) */}
-                              {isHR && request.requires_hr_approval && request.hr_approved === null && request.manager_approved === true && (
-                                <>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* HR Approvals - Only show if user is HR */}
+              {(isHR || isCompanyAdmin()) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Badge variant="secondary">HR</Badge>
+                      HR Approvals
+                    </CardTitle>
+                    <CardDescription>Leave requests requiring HR approval (after manager approval)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {pendingForHR.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Check className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No pending HR approvals</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Employee</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Duration</TableHead>
+                            <TableHead>Request Type</TableHead>
+                            <TableHead>Paid</TableHead>
+                            <TableHead>Manager</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pendingForHR.map((request) => (
+                            <TableRow key={request.id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{request.profile?.full_name}</p>
+                                  <p className="text-xs text-muted-foreground capitalize">{request.profile?.employee_category}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>{request.leave_type?.name}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <p>{request.start_date} to {request.end_date}</p>
+                                  <p className="text-xs text-muted-foreground">{request.total_days} days</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>{getRequestTypeBadge(request.request_type as RequestType)}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={request.is_paid}
+                                    onCheckedChange={(checked) => handleTogglePaid(request.id, checked)}
+                                  />
+                                  <span className="text-xs">{request.is_paid ? 'Paid' : 'Unpaid'}</span>
+                                </div>
+                                {request.auto_unpaid_reason && (
+                                  <p className="text-xs text-muted-foreground mt-1">{request.auto_unpaid_reason}</p>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1 text-green-600">
+                                  <Check className="h-3 w-3" /> Approved
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
                                   <Button size="sm" variant="secondary" onClick={() => handleApproveReject(request.id, 'approved', true)}>
-                                    HR <Check className="h-4 w-4 ml-1" />
+                                    <Check className="h-4 w-4 mr-1" /> Approve
                                   </Button>
                                   <Button size="sm" variant="destructive" onClick={() => handleApproveReject(request.id, 'rejected', true)}>
-                                    HR <X className="h-4 w-4 ml-1" />
+                                    <X className="h-4 w-4 mr-1" /> Reject
                                   </Button>
-                                </>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Message if user has no approval roles */}
+              {managedDepartmentIds.length === 0 && !isHR && !isCompanyAdmin() && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>You don't have any pending approvals. Only department heads can approve manager-level requests.</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
         )}
 
