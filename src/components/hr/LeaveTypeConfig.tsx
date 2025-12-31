@@ -127,6 +127,21 @@ const LeaveTypeConfig: React.FC<LeaveTypeConfigProps> = ({ onUpdate }) => {
           .eq('id', editingType.id);
 
         if (error) throw error;
+
+        // Sync leave balances if days_per_year changed
+        if (editingType.days_per_year !== form.days_per_year) {
+          const currentYear = new Date().getFullYear();
+          const { error: balanceError } = await supabase
+            .from('leave_balances')
+            .update({ total_days: form.days_per_year })
+            .eq('leave_type_id', editingType.id)
+            .eq('year', currentYear);
+
+          if (balanceError) {
+            console.error('Error syncing leave balances:', balanceError);
+          }
+        }
+
         toast.success('Leave type updated');
       } else {
         const { error } = await supabase
