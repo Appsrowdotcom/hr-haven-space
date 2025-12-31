@@ -26,7 +26,11 @@ interface LeaveType {
   is_active: boolean;
 }
 
-const LeaveTypeConfig: React.FC = () => {
+interface LeaveTypeConfigProps {
+  onUpdate?: () => void;
+}
+
+const LeaveTypeConfig: React.FC<LeaveTypeConfigProps> = ({ onUpdate }) => {
   const { company } = useCompany();
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,6 +150,7 @@ const LeaveTypeConfig: React.FC = () => {
       setDialogOpen(false);
       resetForm();
       fetchLeaveTypes();
+      onUpdate?.();
     } catch (error: any) {
       toast.error(error.message || 'Failed to save leave type');
     } finally {
@@ -165,6 +170,7 @@ const LeaveTypeConfig: React.FC = () => {
       if (error) throw error;
       toast.success('Leave type deleted');
       fetchLeaveTypes();
+      onUpdate?.();
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete leave type');
     }
