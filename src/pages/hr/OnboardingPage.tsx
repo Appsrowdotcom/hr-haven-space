@@ -14,7 +14,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { Plus, Loader2, CheckCircle2, Circle, ListChecks, Users, Trash2 } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, Circle, ListChecks, Users, Trash2, MoreVertical, Check } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import AssignOnboardingDialog from '@/components/hr/AssignOnboardingDialog';
 
 interface OnboardingTemplate {
@@ -72,7 +74,9 @@ const OnboardingPage: React.FC = () => {
   });
   const [newItem, setNewItem] = useState({ title: '', description: '', category: '' });
   const [selectedTemplate, setSelectedTemplate] = useState<OnboardingTemplate | null>(null);
-
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
+  const [onboardingToRemove, setOnboardingToRemove] = useState<string | null>(null);
   const fetchTemplates = async () => {
     if (!company?.id) return;
     
@@ -209,6 +213,75 @@ const OnboardingPage: React.FC = () => {
       fetchTemplates();
     } catch (error: any) {
       toast.error(error.message || 'Failed to delete item');
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      // First delete template items
+      const { error: itemsError } = await supabase
+        .from('onboarding_template_items')
+        .delete()
+        .eq('template_id', templateId);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the template
+      const { error } = await supabase
+        .from('onboarding_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) throw error;
+      toast.success('Template deleted');
+      setSelectedTemplate(null);
+      fetchTemplates();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete template');
+    }
+  };
+
+  const handleCompleteOnboarding = async (onboardingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('employee_onboarding')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', onboardingId);
+
+      if (error) throw error;
+      toast.success('Onboarding marked as complete');
+      fetchEmployeeOnboardings();
+      fetchMyOnboarding();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to complete onboarding');
+    }
+  };
+
+  const handleRemoveOnboarding = async (onboardingId: string) => {
+    try {
+      // First delete onboarding items
+      const { error: itemsError } = await supabase
+        .from('employee_onboarding_items')
+        .delete()
+        .eq('onboarding_id', onboardingId);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the onboarding
+      const { error } = await supabase
+        .from('employee_onboarding')
+        .delete()
+        .eq('id', onboardingId);
+
+      if (error) throw error;
+      toast.success('Onboarding removed');
+      fetchEmployeeOnboardings();
+      fetchMyOnboarding();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove onboarding');
     }
   };
 
@@ -363,9 +436,30 @@ const OnboardingPage: React.FC = () => {
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">{template.name}</CardTitle>
-                        <Badge variant={template.is_active ? 'default' : 'secondary'}>
-                          {template.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={template.is_active ? 'default' : 'secondary'}>
+                            {template.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setTemplateToDelete(template.id);
+                                  setDeleteConfirmOpen(true);
+                                }}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Template
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                       {template.description && (
                         <CardDescription>{template.description}</CardDescription>
@@ -452,8 +546,33 @@ const OnboardingPage: React.FC = () => {
                           <Progress value={getOnboardingProgress(onboarding.items)} />
                         </div>
                         <Badge variant={onboarding.status === 'completed' ? 'default' : 'secondary'}>
-                          {getOnboardingProgress(onboarding.items)}%
+                          {onboarding.status === 'completed' ? 'Completed' : `${getOnboardingProgress(onboarding.items)}%`}
                         </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {onboarding.status !== 'completed' && (
+                              <DropdownMenuItem onClick={() => handleCompleteOnboarding(onboarding.id)}>
+                                <Check className="mr-2 h-4 w-4" />
+                                Mark as Completed
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setOnboardingToRemove(onboarding.id);
+                                setDeleteConfirmOpen(true);
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     ))}
                   </div>
@@ -463,6 +582,43 @@ const OnboardingPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {templateToDelete
+                ? 'This will permanently delete the template and all its items. This action cannot be undone.'
+                : 'This will remove the employee from onboarding. This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setTemplateToDelete(null);
+              setOnboardingToRemove(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (templateToDelete) {
+                  handleDeleteTemplate(templateToDelete);
+                } else if (onboardingToRemove) {
+                  handleRemoveOnboarding(onboardingToRemove);
+                }
+                setTemplateToDelete(null);
+                setOnboardingToRemove(null);
+                setDeleteConfirmOpen(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
