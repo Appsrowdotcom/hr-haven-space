@@ -860,7 +860,7 @@ const LeaveManagementPage: React.FC = () => {
 
         {canConfigureLeaveTypes && (
           <TabsContent value="config">
-            <LeaveTypeConfig />
+            <LeaveTypeConfig onUpdate={fetchLeaveTypes} />
           </TabsContent>
         )}
 
