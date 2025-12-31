@@ -67,7 +67,7 @@ const EmployeeDirectoryPage: React.FC = () => {
         .select(`
           *,
           department:departments!profiles_department_id_fkey(name),
-          employee_details(*)
+          employee_details:employee_details!employee_details_profile_id_fkey(*)
         `)
         .eq('company_id', company.id)
         .eq('status', 'active')

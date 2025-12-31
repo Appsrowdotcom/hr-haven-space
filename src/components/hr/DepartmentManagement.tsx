@@ -53,7 +53,7 @@ const DepartmentManagement: React.FC = () => {
         .from('departments')
         .select(`
           *,
-          head:profiles(full_name)
+          head:profiles!departments_head_id_fkey(full_name)
         `)
         .eq('company_id', company.id)
         .order('name');
