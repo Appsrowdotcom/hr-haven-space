@@ -61,6 +61,53 @@ export type Database = {
           },
         ]
       }
+      attendance_punches: {
+        Row: {
+          card_id: string | null
+          created_at: string
+          device_id: string | null
+          device_location: string | null
+          id: string
+          notes: string | null
+          profile_id: string
+          punch_time: string
+          punch_type: string
+          source: string
+        }
+        Insert: {
+          card_id?: string | null
+          created_at?: string
+          device_id?: string | null
+          device_location?: string | null
+          id?: string
+          notes?: string | null
+          profile_id: string
+          punch_time?: string
+          punch_type: string
+          source?: string
+        }
+        Update: {
+          card_id?: string | null
+          created_at?: string
+          device_id?: string | null
+          device_location?: string | null
+          id?: string
+          notes?: string | null
+          profile_id?: string
+          punch_time?: string
+          punch_type?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_punches_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -366,6 +413,50 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_cards: {
+        Row: {
+          card_id: string
+          card_type: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          issued_at: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          card_id: string
+          card_type?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          issued_at?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          card_id?: string
+          card_type?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          issued_at?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_cards_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
