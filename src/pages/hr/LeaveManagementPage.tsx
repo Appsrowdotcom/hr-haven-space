@@ -18,6 +18,7 @@ import { Plus, Loader2, Calendar, Check, X, Clock, AlertCircle, Settings, Calend
 import LeaveTypeConfig from '@/components/hr/LeaveTypeConfig';
 import InitializeLeaveBalances from '@/components/hr/InitializeLeaveBalances';
 import LeaveCalendarView from '@/components/hr/LeaveCalendarView';
+import { leaveRequestSchema, getValidationError } from '@/lib/validations';
 
 interface LeaveType {
   id: string;
@@ -75,7 +76,7 @@ const LeaveManagementPage: React.FC = () => {
     if (!company?.id) return;
     const { data, error } = await supabase
       .from('leave_types')
-      .select('*')
+      .select('id, name, description, days_per_year, is_paid, is_active')
       .eq('company_id', company.id)
       .eq('is_active', true);
     
@@ -168,7 +169,15 @@ const LeaveManagementPage: React.FC = () => {
   };
 
   const handleApplyLeave = async () => {
-    if (!user?.id || !leaveForm.leave_type_id || !leaveForm.start_date || !leaveForm.end_date) return;
+    if (!user?.id) return;
+    
+    // Validate form with Zod schema
+    const validationResult = leaveRequestSchema.safeParse(leaveForm);
+    const validationError = getValidationError(validationResult);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     
     setSaving(true);
     try {
@@ -182,7 +191,7 @@ const LeaveManagementPage: React.FC = () => {
           start_date: leaveForm.start_date,
           end_date: leaveForm.end_date,
           total_days: totalDays,
-          reason: leaveForm.reason || null,
+          reason: leaveForm.reason?.trim() || null,
           status: 'pending',
         });
 

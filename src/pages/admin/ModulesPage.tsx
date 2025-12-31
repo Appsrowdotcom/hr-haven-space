@@ -114,7 +114,7 @@ const ModulesPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('company_modules')
-        .select('*')
+        .select('id, company_id, module, is_enabled, enabled_at, enabled_by')
         .eq('company_id', company.id);
 
       if (error) throw error;

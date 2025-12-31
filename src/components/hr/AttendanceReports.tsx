@@ -60,10 +60,10 @@ const AttendanceReports: React.FC = () => {
       const { data: employees, error: empError } = await employeesQuery;
       if (empError) throw empError;
 
-      // Get attendance records for the month
+      // Get attendance records for the month - only needed columns
       const { data: attendance, error: attError } = await supabase
         .from('attendance')
-        .select('*')
+        .select('id, profile_id, date, check_in, check_out, status, work_hours')
         .gte('date', format(monthStart, 'yyyy-MM-dd'))
         .lte('date', format(monthEnd, 'yyyy-MM-dd'));
 

@@ -15,6 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { toast } from 'sonner';
 import { Plus, Shield, Loader2, Save, Trash2, Edit2 } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
+import { roleSchema, getValidationError } from '@/lib/validations';
 
 type Role = Tables<'roles'>;
 type Permission = Tables<'permissions'>;
@@ -70,7 +71,7 @@ const RolesPermissionsPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('permissions')
-        .select('*')
+        .select('id, code, name, description, category, module, is_sensitive, created_at')
         .order('module')
         .order('category')
         .order('name');
@@ -100,14 +101,23 @@ const RolesPermissionsPage: React.FC = () => {
 
   const handleCreateRole = async () => {
     if (!company?.id || !user?.id) return;
+    
+    // Validate form with Zod schema
+    const validationResult = roleSchema.safeParse(roleForm);
+    const validationError = getValidationError(validationResult);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    
     setSaving(true);
     try {
       // Create role
       const { data: newRole, error: roleError } = await supabase
         .from('roles')
         .insert({
-          name: roleForm.name,
-          description: roleForm.description,
+          name: roleForm.name.trim(),
+          description: roleForm.description.trim() || null,
           company_id: company.id,
           created_by: user.id,
         })
@@ -156,14 +166,23 @@ const RolesPermissionsPage: React.FC = () => {
 
   const handleUpdateRole = async () => {
     if (!editingRole || !user?.id) return;
+    
+    // Validate form with Zod schema
+    const validationResult = roleSchema.safeParse(roleForm);
+    const validationError = getValidationError(validationResult);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    
     setSaving(true);
     try {
       // Update role details
       const { error: roleError } = await supabase
         .from('roles')
         .update({
-          name: roleForm.name,
-          description: roleForm.description,
+          name: roleForm.name.trim(),
+          description: roleForm.description.trim() || null,
         })
         .eq('id', editingRole.id);
 

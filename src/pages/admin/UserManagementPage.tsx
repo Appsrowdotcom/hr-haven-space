@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from 'sonner';
 import { Search, Plus, MoreHorizontal, UserPlus, Mail, Loader2, Shield, UserX, UserCheck, Building2 } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
+import { userInviteSchema, getValidationError } from '@/lib/validations';
 
 type Profile = Tables<'profiles'>;
 type Role = Tables<'roles'>;
@@ -75,7 +76,7 @@ const UserManagementPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('roles')
-        .select('*')
+        .select('id, name, description, is_active, is_system_role, created_at, company_id, created_by, updated_at')
         .eq('company_id', company.id)
         .eq('is_active', true);
 
@@ -93,17 +94,17 @@ const UserManagementPage: React.FC = () => {
     }
   }, [company?.id]);
 
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
   const handleInviteUser = async () => {
     if (!company?.id || !user?.id) return;
     
-    if (!isValidEmail(inviteForm.email)) {
-      toast.error('Please enter a valid email address');
+    // Validate form with Zod schema
+    const validationResult = userInviteSchema.safeParse(inviteForm);
+    const validationError = getValidationError(validationResult);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
+    
     setSaving(true);
     try {
       // Get the current session for authorization
@@ -115,8 +116,8 @@ const UserManagementPage: React.FC = () => {
       // Call the edge function to invite user
       const { data, error } = await supabase.functions.invoke('invite-user', {
         body: {
-          email: inviteForm.email,
-          full_name: inviteForm.full_name,
+          email: inviteForm.email.trim(),
+          full_name: inviteForm.full_name.trim(),
           password: inviteForm.password,
           department_id: inviteForm.department_id || null,
         },
@@ -270,9 +271,11 @@ const UserManagementPage: React.FC = () => {
                   type="password"
                   value={inviteForm.password}
                   onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })}
-                  placeholder="Minimum 6 characters"
+                  placeholder="At least 12 characters"
                 />
-                <p className="text-xs text-muted-foreground">Set a password that you can share with the user</p>
+                <p className="text-xs text-muted-foreground">
+                  Must include uppercase, lowercase, number, and special character
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="department">Department (Optional)</Label>
@@ -301,7 +304,7 @@ const UserManagementPage: React.FC = () => {
                   </Select>
                 )}
               </div>
-              <Button onClick={handleInviteUser} disabled={saving || !inviteForm.email || !inviteForm.password || inviteForm.password.length < 6} className="w-full">
+              <Button onClick={handleInviteUser} disabled={saving || !inviteForm.email || !inviteForm.password || !inviteForm.full_name} className="w-full">
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                 Create User
               </Button>
