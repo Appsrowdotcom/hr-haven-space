@@ -107,19 +107,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const redirectUrl = `${window.location.origin}/`;
 
-      // 1. Create the company first
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({ name: companyName })
-        .select()
-        .single();
-
-      if (companyError) {
-        console.error('Company creation error:', companyError);
-      }
-
-      // 2. Sign up the user with metadata
-      const { data, error } = await supabase.auth.signUp({
+      // Sign up the user with metadata - the handle_new_user() trigger
+      // automatically creates the company record in the database
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
