@@ -53,8 +53,7 @@ const DepartmentManagement: React.FC = () => {
         .from('departments')
         .select(`
           *,
-          head:profiles!departments_head_id_fkey(full_name),
-          parent:departments!departments_parent_id_fkey(name)
+          head:profiles(full_name)
         `)
         .eq('company_id', company.id)
         .order('name');
@@ -78,10 +77,15 @@ const DepartmentManagement: React.FC = () => {
         }
       });
 
-      const deptsWithCounts = (deptData || []).map(d => ({
-        ...d,
-        employee_count: counts[d.id] || 0,
-      }));
+      const deptsWithCounts = (deptData || []).map(d => {
+        // Find parent department name manually
+        const parentDept = deptData?.find(pd => pd.id === d.parent_id);
+        return {
+          ...d,
+          employee_count: counts[d.id] || 0,
+          parent: parentDept ? [{ name: parentDept.name }] : null,
+        };
+      });
 
       setDepartments(deptsWithCounts as DepartmentWithDetails[]);
     } catch (error: any) {
