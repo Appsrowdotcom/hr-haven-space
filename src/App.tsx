@@ -12,6 +12,7 @@ import { RequireSuperAdmin } from "@/components/guards";
 import { AppLayout } from "@/components/layout";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import Dashboard from "./pages/Dashboard";
+import ProfilePage from "./pages/ProfilePage";
 import Auth from "./pages/Auth";
 import Unauthorized from "./pages/Unauthorized";
 import ModuleDisabled from "./pages/ModuleDisabled";
@@ -71,6 +72,7 @@ const App = () => (
                   <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                     
                     {/* HR Module routes */}
                     <Route element={<ProtectedRoute module="HR_CORE" />}>
@@ -115,7 +117,6 @@ const App = () => (
                       <Route path="/admin/users" element={<UserManagementPage />} />
                       <Route path="/admin/roles" element={<RolesPermissionsPage />} />
                       <Route path="/admin/modules" element={<ModulesPage />} />
-                      <Route path="/admin/settings" element={<CompanySettingsPage />} />
                     </Route>
                   </Route>
 
