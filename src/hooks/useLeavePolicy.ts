@@ -21,6 +21,7 @@ interface LeavePolicy {
   probation_months: number;
   leave_credit_start_month: number;
   allow_negative_balance: boolean;
+  allow_advance_leave: boolean;
   emergency_default_unpaid: boolean;
   unplanned_default_unpaid: boolean;
 }
@@ -41,6 +42,7 @@ const DEFAULT_POLICY: LeavePolicy = {
   probation_months: 3,
   leave_credit_start_month: 4,
   allow_negative_balance: false,
+  allow_advance_leave: false,
   emergency_default_unpaid: true,
   unplanned_default_unpaid: true,
 };
@@ -159,6 +161,7 @@ export function useLeavePolicy() {
     leaveTypeId: string,
     totalDays: number,
     availableBalance: number,
+    accruedBalance: number,
     leaveTypeIsPaid: boolean,
     isEmergency: boolean = false
   ): LeaveRequestValidation => {
@@ -202,11 +205,21 @@ export function useLeavePolicy() {
       }
     }
 
-    // Check balance
+    // Check balance - using accrued balance (what's actually earned so far)
     if (isPaid && leaveTypeIsPaid) {
+      // Calculate how much they can use (accrued - already used)
+      const usableBalance = accruedBalance - (availableBalance < 0 ? Math.abs(availableBalance) : (accruedBalance - availableBalance));
+      
       if (availableBalance < totalDays) {
-        if (policy.allow_negative_balance) {
+        // Not enough balance
+        if (accruedBalance >= totalDays && policy.allow_advance_leave) {
+          // They have accrued enough but used some - allow if advance leave is enabled
+          warnings.push(`You are using advance leave. Accrued: ${accruedBalance} days, Available: ${availableBalance} days.`);
+          requiresHRApproval = true;
+        } else if (policy.allow_negative_balance) {
           warnings.push(`Insufficient balance (${availableBalance} days available). This will exceed your limit.`);
+        } else if (!policy.allow_advance_leave && availableBalance < totalDays) {
+          errors.push(`Insufficient leave balance. You have ${availableBalance} days available but requested ${totalDays} days. Pre-availing leaves is not allowed without HR/Admin approval.`);
         } else {
           errors.push(`Insufficient leave balance. You have ${availableBalance} days but requested ${totalDays} days.`);
         }

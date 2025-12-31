@@ -15,6 +15,7 @@ interface LeavePolicy {
   probation_months: number;
   leave_credit_start_month: number;
   allow_negative_balance: boolean;
+  allow_advance_leave: boolean;
   emergency_default_unpaid: boolean;
   unplanned_default_unpaid: boolean;
 }
@@ -24,6 +25,7 @@ const DEFAULT_POLICY: LeavePolicy = {
   probation_months: 3,
   leave_credit_start_month: 4,
   allow_negative_balance: false,
+  allow_advance_leave: false,
   emergency_default_unpaid: true,
   unplanned_default_unpaid: true,
 };
@@ -52,6 +54,7 @@ export function LeavePolicySettings() {
           probation_months: data.probation_months,
           leave_credit_start_month: data.leave_credit_start_month,
           allow_negative_balance: data.allow_negative_balance,
+          allow_advance_leave: data.allow_advance_leave ?? false,
           emergency_default_unpaid: data.emergency_default_unpaid,
           unplanned_default_unpaid: data.unplanned_default_unpaid,
         });
@@ -75,6 +78,7 @@ export function LeavePolicySettings() {
             probation_months: policy.probation_months,
             leave_credit_start_month: policy.leave_credit_start_month,
             allow_negative_balance: policy.allow_negative_balance,
+            allow_advance_leave: policy.allow_advance_leave,
             emergency_default_unpaid: policy.emergency_default_unpaid,
             unplanned_default_unpaid: policy.unplanned_default_unpaid,
           })
@@ -90,6 +94,7 @@ export function LeavePolicySettings() {
             probation_months: policy.probation_months,
             leave_credit_start_month: policy.leave_credit_start_month,
             allow_negative_balance: policy.allow_negative_balance,
+            allow_advance_leave: policy.allow_advance_leave,
             emergency_default_unpaid: policy.emergency_default_unpaid,
             unplanned_default_unpaid: policy.unplanned_default_unpaid,
           })
@@ -234,6 +239,21 @@ export function LeavePolicySettings() {
                 }))}
               />
             </div>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div>
+                <Label>Allow Pre-availing Leaves</Label>
+                <p className="text-sm text-muted-foreground">
+                  Allow employees to use future (unaccrued) leave credits with HR approval
+                </p>
+              </div>
+              <Switch
+                checked={policy.allow_advance_leave}
+                onCheckedChange={(checked) => setPolicy(prev => ({
+                  ...prev,
+                  allow_advance_leave: checked
+                }))}
+              />
+            </div>
           </div>
         </div>
 
@@ -243,7 +263,8 @@ export function LeavePolicySettings() {
           <ul className="text-sm space-y-1 text-muted-foreground">
             <li>• <strong>Trainees & Interns:</strong> No paid leave, only emergency (unpaid)</li>
             <li>• <strong>Probation (first {policy.probation_months} months):</strong> No paid leave</li>
-            <li>• <strong>Confirmed employees:</strong> Full leave benefits from month {policy.leave_credit_start_month}</li>
+            <li>• <strong>Leave credits start:</strong> From month {policy.leave_credit_start_month} (credits accrue monthly)</li>
+            <li>• <strong>Pre-availing:</strong> {policy.allow_advance_leave ? 'Allowed with HR approval' : 'Not allowed - only accrued balance can be used'}</li>
             <li>• <strong>Planned leave:</strong> Applied ≥{policy.min_days_advance_planned} days in advance → Manager approval</li>
             <li>• <strong>Unplanned leave:</strong> Applied &lt;{policy.min_days_advance_planned} days → HR + Manager approval</li>
             <li>• <strong>Emergency / &gt;2 days:</strong> Requires HR + Manager approval</li>

@@ -706,6 +706,7 @@ export type Database = {
       }
       leave_balances: {
         Row: {
+          accrued_days: number | null
           carry_forward_days: number
           created_at: string
           id: string
@@ -717,6 +718,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          accrued_days?: number | null
           carry_forward_days?: number
           created_at?: string
           id?: string
@@ -728,6 +730,7 @@ export type Database = {
           year: number
         }
         Update: {
+          accrued_days?: number | null
           carry_forward_days?: number
           created_at?: string
           id?: string
@@ -757,6 +760,7 @@ export type Database = {
       }
       leave_policies: {
         Row: {
+          allow_advance_leave: boolean | null
           allow_negative_balance: boolean
           company_id: string
           created_at: string
@@ -769,6 +773,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_advance_leave?: boolean | null
           allow_negative_balance?: boolean
           company_id: string
           created_at?: string
@@ -781,6 +786,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_advance_leave?: boolean | null
           allow_negative_balance?: boolean
           company_id?: string
           created_at?: string
@@ -927,6 +933,7 @@ export type Database = {
           is_carry_forward: boolean
           is_paid: boolean
           max_carry_forward_days: number | null
+          monthly_credit: number | null
           name: string
           updated_at: string
         }
@@ -940,6 +947,7 @@ export type Database = {
           is_carry_forward?: boolean
           is_paid?: boolean
           max_carry_forward_days?: number | null
+          monthly_credit?: number | null
           name: string
           updated_at?: string
         }
@@ -953,6 +961,7 @@ export type Database = {
           is_carry_forward?: boolean
           is_paid?: boolean
           max_carry_forward_days?: number | null
+          monthly_credit?: number | null
           name?: string
           updated_at?: string
         }
@@ -1425,6 +1434,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_accrued_leave: {
+        Args: { _leave_type_id: string; _profile_id: string }
+        Returns: number
+      }
       get_months_employed: { Args: { _profile_id: string }; Returns: number }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_permission: {

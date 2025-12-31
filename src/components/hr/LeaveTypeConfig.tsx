@@ -19,6 +19,7 @@ interface LeaveType {
   name: string;
   description: string | null;
   days_per_year: number;
+  monthly_credit: number;
   is_paid: boolean;
   is_carry_forward: boolean;
   max_carry_forward_days: number | null;
@@ -35,9 +36,10 @@ const LeaveTypeConfig: React.FC = () => {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    days_per_year: 12,
+    days_per_year: 18,
+    monthly_credit: 1.5,
     is_paid: true,
-    is_carry_forward: false,
+    is_carry_forward: true,
     max_carry_forward_days: 0,
     is_active: true,
   });
@@ -47,7 +49,7 @@ const LeaveTypeConfig: React.FC = () => {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('leave_types')
-      .select('id, name, description, days_per_year, is_paid, is_carry_forward, max_carry_forward_days, is_active, company_id')
+      .select('id, name, description, days_per_year, monthly_credit, is_paid, is_carry_forward, max_carry_forward_days, is_active, company_id')
       .eq('company_id', company.id)
       .order('name');
 
@@ -67,9 +69,10 @@ const LeaveTypeConfig: React.FC = () => {
     setForm({
       name: '',
       description: '',
-      days_per_year: 12,
+      days_per_year: 18,
+      monthly_credit: 1.5,
       is_paid: true,
-      is_carry_forward: false,
+      is_carry_forward: true,
       max_carry_forward_days: 0,
       is_active: true,
     });
@@ -82,6 +85,7 @@ const LeaveTypeConfig: React.FC = () => {
       name: leaveType.name,
       description: leaveType.description || '',
       days_per_year: leaveType.days_per_year,
+      monthly_credit: leaveType.monthly_credit || 1.5,
       is_paid: leaveType.is_paid,
       is_carry_forward: leaveType.is_carry_forward,
       max_carry_forward_days: leaveType.max_carry_forward_days || 0,
@@ -110,6 +114,7 @@ const LeaveTypeConfig: React.FC = () => {
             name: form.name.trim(),
             description: form.description.trim() || null,
             days_per_year: form.days_per_year,
+            monthly_credit: form.monthly_credit,
             is_paid: form.is_paid,
             is_carry_forward: form.is_carry_forward,
             max_carry_forward_days: form.is_carry_forward ? form.max_carry_forward_days : null,
@@ -127,6 +132,7 @@ const LeaveTypeConfig: React.FC = () => {
             name: form.name.trim(),
             description: form.description.trim() || null,
             days_per_year: form.days_per_year,
+            monthly_credit: form.monthly_credit,
             is_paid: form.is_paid,
             is_carry_forward: form.is_carry_forward,
             max_carry_forward_days: form.is_carry_forward ? form.max_carry_forward_days : null,
@@ -209,14 +215,28 @@ const LeaveTypeConfig: React.FC = () => {
                   placeholder="Brief description of this leave type"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Days Per Year</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={form.days_per_year}
-                  onChange={(e) => setForm({ ...form, days_per_year: parseInt(e.target.value) || 0 })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Days Per Year</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={form.days_per_year}
+                    onChange={(e) => setForm({ ...form, days_per_year: parseInt(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-muted-foreground">Maximum annual entitlement</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Monthly Credit</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    value={form.monthly_credit}
+                    onChange={(e) => setForm({ ...form, monthly_credit: parseFloat(e.target.value) || 0 })}
+                  />
+                  <p className="text-xs text-muted-foreground">Credits earned per month</p>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <Label>Paid Leave</Label>
@@ -271,6 +291,7 @@ const LeaveTypeConfig: React.FC = () => {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Days/Year</TableHead>
+                <TableHead>Monthly Credit</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Carry Forward</TableHead>
                 <TableHead>Status</TableHead>
@@ -289,6 +310,7 @@ const LeaveTypeConfig: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>{type.days_per_year}</TableCell>
+                  <TableCell>{type.monthly_credit || 1.5}/month</TableCell>
                   <TableCell>
                     <Badge variant={type.is_paid ? 'default' : 'secondary'}>
                       {type.is_paid ? 'Paid' : 'Unpaid'}

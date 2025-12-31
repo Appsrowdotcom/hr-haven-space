@@ -57,6 +57,7 @@ interface LeaveBalance {
   leave_type_id: string;
   total_days: number;
   used_days: number;
+  accrued_days?: number;
   leave_type?: LeaveType;
 }
 
@@ -182,6 +183,11 @@ const LeaveManagementPage: React.FC = () => {
     ? Number(selectedBalance.total_days) - Number(selectedBalance.used_days) 
     : 0;
 
+  // Accrued balance = what they've actually earned so far (total_days represents this after initialization)
+  const accruedBalance = selectedBalance 
+    ? Number(selectedBalance.accrued_days || selectedBalance.total_days)
+    : 0;
+
   // Real-time validation
   const validation = useMemo(() => {
     if (!leaveForm.leave_type_id || !leaveForm.start_date || !leaveForm.end_date) {
@@ -194,10 +200,11 @@ const LeaveManagementPage: React.FC = () => {
       leaveForm.leave_type_id,
       totalDays,
       availableBalance,
+      accruedBalance,
       selectedLeaveType?.is_paid || false,
       isEmergency
     );
-  }, [leaveForm, isEmergency, availableBalance, selectedLeaveType, validateLeaveRequest]);
+  }, [leaveForm, isEmergency, availableBalance, accruedBalance, selectedLeaveType, validateLeaveRequest]);
 
   const handleApplyLeave = async () => {
     if (!user?.id || !validation) return;
