@@ -746,6 +746,13 @@ export type Database = {
             foreignKeyName: "leave_balances_leave_type_id_fkey"
             columns: ["leave_type_id"]
             isOneToOne: false
+            referencedRelation: "leave_type_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balances_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
             referencedRelation: "leave_types"
             referencedColumns: ["id"]
           },
@@ -897,6 +904,13 @@ export type Database = {
             columns: ["hr_approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_type_summary"
             referencedColumns: ["id"]
           },
           {
@@ -1475,7 +1489,412 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leave_balance_summary: {
+        Row: {
+          accrued_days: number | null
+          carry_forward_days: number | null
+          company_id: string | null
+          days_per_year: number | null
+          department_id: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          is_paid: boolean | null
+          leave_type_description: string | null
+          leave_type_id: string | null
+          leave_type_name: string | null
+          monthly_credit: number | null
+          profile_id: string | null
+          remaining_days: number | null
+          total_days: number | null
+          used_days: number | null
+          year: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_department"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balances_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_type_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balances_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_balances_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_request_details: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          auto_unpaid_reason: string | null
+          company_id: string | null
+          created_at: string | null
+          department_id: string | null
+          department_name: string | null
+          employee_category:
+            | Database["public"]["Enums"]["employee_category"]
+            | null
+          employee_email: string | null
+          employee_name: string | null
+          end_date: string | null
+          hr_approved: boolean | null
+          hr_approved_at: string | null
+          hr_approved_by: string | null
+          id: string | null
+          is_paid: boolean | null
+          leave_type_id: string | null
+          leave_type_is_paid: boolean | null
+          leave_type_name: string | null
+          manager_approved: boolean | null
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          profile_id: string | null
+          reason: string | null
+          rejection_reason: string | null
+          request_type: string | null
+          requires_hr_approval: boolean | null
+          start_date: string | null
+          status: string | null
+          total_days: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_department"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_hr_approved_by_fkey"
+            columns: ["hr_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_type_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_manager_approved_by_fkey"
+            columns: ["manager_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_type_summary: {
+        Row: {
+          company_id: string | null
+          days_per_year: number | null
+          description: string | null
+          employees_with_balance: number | null
+          id: string | null
+          is_active: boolean | null
+          is_carry_forward: boolean | null
+          is_paid: boolean | null
+          max_carry_forward_days: number | null
+          monthly_credit: number | null
+          name: string | null
+          total_days_remaining: number | null
+          total_days_used: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_types_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_hr_approvals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          auto_unpaid_reason: string | null
+          company_id: string | null
+          created_at: string | null
+          department_id: string | null
+          department_name: string | null
+          employee_category:
+            | Database["public"]["Enums"]["employee_category"]
+            | null
+          employee_email: string | null
+          employee_name: string | null
+          end_date: string | null
+          hr_approved: boolean | null
+          hr_approved_at: string | null
+          hr_approved_by: string | null
+          id: string | null
+          is_paid: boolean | null
+          leave_type_id: string | null
+          leave_type_is_paid: boolean | null
+          leave_type_name: string | null
+          manager_approved: boolean | null
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          profile_id: string | null
+          reason: string | null
+          rejection_reason: string | null
+          request_type: string | null
+          requires_hr_approval: boolean | null
+          start_date: string | null
+          status: string | null
+          total_days: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_department"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_hr_approved_by_fkey"
+            columns: ["hr_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_type_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_manager_approved_by_fkey"
+            columns: ["manager_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pending_manager_approvals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          auto_unpaid_reason: string | null
+          company_id: string | null
+          created_at: string | null
+          department_head_id: string | null
+          department_id: string | null
+          department_name: string | null
+          employee_category:
+            | Database["public"]["Enums"]["employee_category"]
+            | null
+          employee_email: string | null
+          employee_name: string | null
+          end_date: string | null
+          hr_approved: boolean | null
+          hr_approved_at: string | null
+          hr_approved_by: string | null
+          id: string | null
+          is_paid: boolean | null
+          leave_type_id: string | null
+          leave_type_is_paid: boolean | null
+          leave_type_name: string | null
+          manager_approved: boolean | null
+          manager_approved_at: string | null
+          manager_approved_by: string | null
+          profile_id: string | null
+          reason: string | null
+          rejection_reason: string | null
+          request_type: string | null
+          requires_hr_approval: boolean | null
+          start_date: string | null
+          status: string | null
+          total_days: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_head_id_fkey"
+            columns: ["department_head_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_profiles_department"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_hr_approved_by_fkey"
+            columns: ["hr_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_type_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_leave_type_id_fkey"
+            columns: ["leave_type_id"]
+            isOneToOne: false
+            referencedRelation: "leave_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_manager_approved_by_fkey"
+            columns: ["manager_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calculate_accrued_leave: {
