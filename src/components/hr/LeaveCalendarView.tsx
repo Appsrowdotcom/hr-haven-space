@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -7,25 +7,62 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Loader2, ChevronLeft, ChevronRight, Calendar, Users } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, isSameDay, isWithinInterval, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths, isSameDay, isWithinInterval, parseISO } from 'date-fns';
 
 interface LeaveEvent {
   id: string;
   profile_id: string;
   employee_name: string;
   leave_type: string;
+  leave_type_id: string;
   start_date: string;
   end_date: string;
   status: string;
 }
 
+interface LeaveTypeInfo {
+  id: string;
+  name: string;
+  is_paid: boolean;
+}
+
+// Generate consistent colors based on leave type index
+const COLOR_PALETTE = [
+  'bg-blue-500',
+  'bg-red-500',
+  'bg-green-500',
+  'bg-pink-500',
+  'bg-purple-500',
+  'bg-amber-500',
+  'bg-cyan-500',
+  'bg-indigo-500',
+  'bg-emerald-500',
+  'bg-rose-500',
+];
+
 const LeaveCalendarView: React.FC = () => {
   const { company, departments } = useCompany();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [leaveEvents, setLeaveEvents] = useState<LeaveEvent[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<LeaveTypeInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+
+  // Fetch leave types for color mapping and legend
+  const fetchLeaveTypes = async () => {
+    if (!company?.id) return;
+    const { data, error } = await supabase
+      .from('leave_types')
+      .select('id, name, is_paid')
+      .eq('company_id', company.id)
+      .eq('is_active', true)
+      .order('name');
+    
+    if (!error && data) {
+      setLeaveTypes(data);
+    }
+  };
 
   const fetchLeaveEvents = async () => {
     if (!company?.id) return;
@@ -41,10 +78,11 @@ const LeaveCalendarView: React.FC = () => {
         .select(`
           id,
           profile_id,
+          leave_type_id,
           start_date,
           end_date,
           status,
-          leave_type:leave_types(name),
+          leave_type:leave_types(id, name),
           profile:profiles!leave_requests_profile_id_fkey(full_name, department_id)
         `)
         .eq('status', 'approved')
@@ -68,6 +106,7 @@ const LeaveCalendarView: React.FC = () => {
             profile_id: r.profile_id,
             employee_name: profile?.full_name || 'Unknown',
             leave_type: leaveType?.name || 'Leave',
+            leave_type_id: r.leave_type_id,
             start_date: r.start_date,
             end_date: r.end_date,
             status: r.status,
@@ -81,6 +120,12 @@ const LeaveCalendarView: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (company?.id) {
+      fetchLeaveTypes();
+    }
+  }, [company?.id]);
 
   useEffect(() => {
     if (company?.id) {
@@ -112,16 +157,17 @@ const LeaveCalendarView: React.FC = () => {
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Color mapping for leave types
-  const getLeaveColor = (leaveType: string) => {
-    const colors: Record<string, string> = {
-      'Casual Leave': 'bg-blue-500',
-      'Sick Leave': 'bg-red-500',
-      'Earned Leave': 'bg-green-500',
-      'Maternity Leave': 'bg-pink-500',
-      'Paternity Leave': 'bg-purple-500',
-    };
-    return colors[leaveType] || 'bg-primary';
+  // Dynamic color mapping based on leave type index
+  const leaveTypeColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    leaveTypes.forEach((lt, index) => {
+      map[lt.id] = COLOR_PALETTE[index % COLOR_PALETTE.length];
+    });
+    return map;
+  }, [leaveTypes]);
+
+  const getLeaveColor = (leaveTypeId: string) => {
+    return leaveTypeColorMap[leaveTypeId] || 'bg-primary';
   };
 
   return (
@@ -198,7 +244,7 @@ const LeaveCalendarView: React.FC = () => {
                         {dayEvents.slice(0, 2).map(event => (
                           <div
                             key={event.id}
-                            className={`text-xs px-1 py-0.5 rounded truncate text-white ${getLeaveColor(event.leave_type)}`}
+                            className={`text-xs px-1 py-0.5 rounded truncate text-white ${getLeaveColor(event.leave_type_id)}`}
                             title={`${event.employee_name} - ${event.leave_type}`}
                           >
                             {event.employee_name.split(' ')[0]}
@@ -255,34 +301,24 @@ const LeaveCalendarView: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Legend */}
+            {/* Dynamic Legend from leave types */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Legend</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-blue-500" />
-                    <span className="text-sm">Casual Leave</span>
+                {leaveTypes.length > 0 ? (
+                  <div className="space-y-2">
+                    {leaveTypes.map((lt, index) => (
+                      <div key={lt.id} className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded ${COLOR_PALETTE[index % COLOR_PALETTE.length]}`} />
+                        <span className="text-sm">{lt.name}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-red-500" />
-                    <span className="text-sm">Sick Leave</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-green-500" />
-                    <span className="text-sm">Earned Leave</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-pink-500" />
-                    <span className="text-sm">Maternity Leave</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-purple-500" />
-                    <span className="text-sm">Paternity Leave</span>
-                  </div>
-                </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No leave types configured</p>
+                )}
               </CardContent>
             </Card>
 
