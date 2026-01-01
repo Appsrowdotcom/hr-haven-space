@@ -30,11 +30,13 @@ import {
   AlertTriangle,
   DollarSign,
   ShieldAlert,
+  Users,
 } from "lucide-react";
 import LeaveTypeConfig from "@/components/hr/LeaveTypeConfig";
 import InitializeLeaveBalances from "@/components/hr/InitializeLeaveBalances";
 import LeaveCalendarView from "@/components/hr/LeaveCalendarView";
 import { LeavePolicySettings } from "@/components/hr/LeavePolicySettings";
+import TeamLeaveBalances from "@/components/hr/TeamLeaveBalances";
 import { leaveRequestSchema, getValidationError } from "@/lib/validations";
 
 interface LeaveType {
@@ -638,6 +640,12 @@ const LeaveManagementPage: React.FC = () => {
           <TabsTrigger value="my-requests">My Requests</TabsTrigger>
           {canManageLeave && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
           {canManageLeave && (
+            <TabsTrigger value="team-balances">
+              <Users className="h-4 w-4 mr-1" />
+              Team Balances
+            </TabsTrigger>
+          )}
+          {canManageLeave && (
             <TabsTrigger value="calendar">
               <CalendarDays className="h-4 w-4 mr-1" />
               Calendar
@@ -839,6 +847,12 @@ const LeaveManagementPage: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+        )}
+
+        {canManageLeave && (
+          <TabsContent value="team-balances">
+            <TeamLeaveBalances />
           </TabsContent>
         )}
 
