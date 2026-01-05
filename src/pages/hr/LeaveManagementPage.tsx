@@ -506,11 +506,25 @@ const LeaveManagementPage: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {leaveTypes.map((type) => {
-                            const balance = leaveBalances.find((b) => b.leave_type_id === type.id);
-                            const available = balance ? Number(balance.total_days) - Number(balance.used_days) : 0;
+                            let available = 0;
+                            let displayText = "";
+                            
+                            if (type.is_monthly_quota) {
+                              // For monthly quota types, show monthly remaining
+                              const usage = monthlyUsage.find((u) => u.leave_type_id === type.id);
+                              available = usage ? usage.remaining_days : (type.monthly_limit || 0);
+                              const monthName = new Date().toLocaleString('default', { month: 'short' });
+                              displayText = `${type.name} ${type.is_paid ? "(Paid)" : "(Unpaid)"} - ${available} days left in ${monthName}`;
+                            } else {
+                              // For annual types, show yearly remaining
+                              const balance = leaveBalances.find((b) => b.leave_type_id === type.id);
+                              available = balance ? Number(balance.total_days) - Number(balance.used_days) : 0;
+                              displayText = `${type.name} ${type.is_paid ? "(Paid)" : "(Unpaid)"} - ${available} days available`;
+                            }
+                            
                             return (
                               <SelectItem key={type.id} value={type.id}>
-                                {type.name} {type.is_paid ? "(Paid)" : "(Unpaid)"} - {available} days available
+                                {displayText}
                               </SelectItem>
                             );
                           })}
