@@ -38,7 +38,7 @@ import {
   AttendancePage,
   OnboardingPage,
 } from "./pages/hr";
-
+import { PayrollPage } from "./pages/finance";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -93,6 +93,7 @@ const App = () => (
 
                     {/* Finance Module routes */}
                     <Route element={<ProtectedRoute module="FINANCE" />}>
+                      <Route path="/finance/payroll" element={<PayrollPage />} />
                       <Route path="/finance/*" element={<Dashboard />} />
                     </Route>
 
