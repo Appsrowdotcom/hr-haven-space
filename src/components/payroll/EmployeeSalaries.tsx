@@ -7,11 +7,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/contexts/PermissionContext';
-import { Loader2, Plus, Edit2, Search, IndianRupee } from 'lucide-react';
+import { Loader2, Plus, Edit2, Search, IndianRupee, History, Eye, TrendingUp, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Employee {
@@ -37,6 +40,7 @@ interface EmployeeSalary {
   id: string;
   profile_id: string;
   effective_from: string;
+  effective_to: string | null;
   gross_salary: number;
   ctc: number;
   bank_name: string | null;
@@ -58,6 +62,15 @@ interface SalaryComponentValue {
   amount: number;
 }
 
+interface SalaryHistory {
+  id: string;
+  effective_from: string;
+  effective_to: string | null;
+  gross_salary: number;
+  ctc: number;
+  is_active: boolean;
+}
+
 const EmployeeSalaries: React.FC = () => {
   const { company } = useCompany();
   const { hasPermission } = usePermissions();
@@ -69,10 +82,15 @@ const EmployeeSalaries: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   const [editingSalary, setEditingSalary] = useState<Partial<EmployeeSalary> | null>(null);
   const [componentValues, setComponentValues] = useState<SalaryComponentValue[]>([]);
+  const [salaryHistory, setSalaryHistory] = useState<SalaryHistory[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [dialogTab, setDialogTab] = useState('salary');
+  const [isRevision, setIsRevision] = useState(false);
 
   useEffect(() => {
     if (company?.id) {
@@ -126,9 +144,52 @@ const EmployeeSalaries: React.FC = () => {
     }
   };
 
+  const fetchSalaryHistory = async (profileId: string) => {
+    const { data, error } = await supabase
+      .from('employee_salaries')
+      .select('id, effective_from, effective_to, gross_salary, ctc, is_active')
+      .eq('profile_id', profileId)
+      .order('effective_from', { ascending: false });
+    
+    if (!error && data) {
+      setSalaryHistory(data);
+    }
+  };
+
+  const handleViewHistory = async (salary: EmployeeSalary) => {
+    const emp = employees.find(e => e.id === salary.profile_id);
+    setSelectedEmployee(emp || null);
+    await fetchSalaryHistory(salary.profile_id);
+    setHistoryDialogOpen(true);
+  };
+
   const handleEdit = async (salary: EmployeeSalary) => {
     setEditingSalary(salary);
+    setIsRevision(false);
     await fetchSalaryComponents(salary.id);
+    setDialogTab('salary');
+    setDialogOpen(true);
+  };
+
+  const handleRevision = async (salary: EmployeeSalary) => {
+    // Create revision - copy current salary but with new effective date
+    setEditingSalary({
+      profile_id: salary.profile_id,
+      effective_from: format(new Date(), 'yyyy-MM-dd'),
+      gross_salary: salary.gross_salary,
+      ctc: salary.ctc,
+      bank_name: salary.bank_name,
+      bank_account_number: salary.bank_account_number,
+      ifsc_code: salary.ifsc_code,
+      pan_number: salary.pan_number,
+      pf_number: salary.pf_number,
+      esi_number: salary.esi_number,
+      uan_number: salary.uan_number,
+      is_active: true,
+    });
+    setIsRevision(true);
+    await fetchSalaryComponents(salary.id);
+    setDialogTab('salary');
     setDialogOpen(true);
   };
 
@@ -140,10 +201,12 @@ const EmployeeSalaries: React.FC = () => {
       ctc: 0,
       is_active: true,
     });
+    setIsRevision(false);
     
     // Initialize with default component values
     const earningComponents = components.filter(c => c.type === 'earning' && !c.is_system);
     setComponentValues(earningComponents.map(c => ({ component_id: c.id, amount: 0 })));
+    setDialogTab('salary');
     setDialogOpen(true);
   };
 
@@ -176,6 +239,20 @@ const EmployeeSalaries: React.FC = () => {
       const grossSalary = calculateGross();
       const ctc = grossSalary * 1.15; // Approximate CTC with employer contributions
       
+      // If this is a revision, deactivate the old salary first
+      if (isRevision) {
+        const existingSalary = salaries.find(s => s.profile_id === editingSalary.profile_id);
+        if (existingSalary) {
+          await supabase
+            .from('employee_salaries')
+            .update({
+              is_active: false,
+              effective_to: editingSalary.effective_from,
+            })
+            .eq('id', existingSalary.id);
+        }
+      }
+      
       const salaryPayload = {
         profile_id: editingSalary.profile_id,
         effective_from: editingSalary.effective_from,
@@ -193,7 +270,7 @@ const EmployeeSalaries: React.FC = () => {
 
       let salaryId = editingSalary.id;
 
-      if (salaryId) {
+      if (salaryId && !isRevision) {
         const { error } = await supabase
           .from('employee_salaries')
           .update(salaryPayload)
@@ -234,10 +311,11 @@ const EmployeeSalaries: React.FC = () => {
         }
       }
 
-      toast.success('Salary saved successfully');
+      toast.success(isRevision ? 'Salary revision saved successfully' : 'Salary saved successfully');
       setDialogOpen(false);
       setEditingSalary(null);
       setComponentValues([]);
+      setIsRevision(false);
       fetchData();
     } catch (error: any) {
       toast.error(error.message || 'Failed to save salary');
@@ -264,6 +342,9 @@ const EmployeeSalaries: React.FC = () => {
   };
 
   const earningComponents = components.filter(c => c.type === 'earning' && !c.is_system);
+  const selectedEmployeeForDialog = editingSalary?.profile_id 
+    ? employees.find(e => e.id === editingSalary.profile_id) 
+    : null;
 
   if (loading) {
     return (
@@ -305,6 +386,15 @@ const EmployeeSalaries: React.FC = () => {
         )}
       </div>
 
+      {employeesWithoutSalary.length > 0 && (
+        <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <span className="text-sm text-amber-700 dark:text-amber-400">
+            {employeesWithoutSalary.length} employee(s) don't have salary configured
+          </span>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Employee Salaries</CardTitle>
@@ -327,7 +417,7 @@ const EmployeeSalaries: React.FC = () => {
                   <TableHead className="text-right">Gross Salary</TableHead>
                   <TableHead className="text-right">CTC</TableHead>
                   <TableHead>Effective From</TableHead>
-                  {canManage && <TableHead className="w-[80px]">Actions</TableHead>}
+                  {canManage && <TableHead className="w-[150px]">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -350,13 +440,32 @@ const EmployeeSalaries: React.FC = () => {
                     <TableCell>{format(new Date(salary.effective_from), 'dd MMM yyyy')}</TableCell>
                     {canManage && (
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(salary)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(salary)}
+                            title="Edit Salary"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRevision(salary)}
+                            title="Salary Revision"
+                          >
+                            <TrendingUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewHistory(salary)}
+                            title="View History"
+                          >
+                            <History className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -367,131 +476,219 @@ const EmployeeSalaries: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Salary Edit/Add Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              {editingSalary?.id ? 'Edit' : 'Add'} Employee Salary
+              {isRevision ? 'Salary Revision' : editingSalary?.id ? 'Edit' : 'Add'} Employee Salary
+              {selectedEmployeeForDialog && (
+                <span className="font-normal text-muted-foreground ml-2">
+                  - {selectedEmployeeForDialog.full_name}
+                </span>
+              )}
             </DialogTitle>
             <DialogDescription>
-              Configure salary structure and bank details
+              {isRevision 
+                ? 'Create a new salary revision. Previous salary will be marked as inactive.'
+                : 'Configure salary structure, bank details, and statutory information'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            <div className="grid gap-4 grid-cols-2">
-              <div className="space-y-2">
-                <Label>Effective From</Label>
-                <Input
-                  type="date"
-                  value={editingSalary?.effective_from || ''}
-                  onChange={(e) => setEditingSalary({ ...editingSalary, effective_from: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Calculated Gross</Label>
-                <div className="flex items-center h-10 px-3 border rounded-md bg-muted">
-                  <IndianRupee className="h-4 w-4 mr-1" />
-                  <span className="font-medium">{formatCurrency(calculateGross())}</span>
-                </div>
-              </div>
-            </div>
+          <Tabs value={dialogTab} onValueChange={setDialogTab} className="flex-1 overflow-hidden flex flex-col">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="salary">Salary Components</TabsTrigger>
+              <TabsTrigger value="bank">Bank Details</TabsTrigger>
+              <TabsTrigger value="statutory">Statutory</TabsTrigger>
+            </TabsList>
 
-            <div>
-              <h4 className="font-medium mb-3">Salary Components</h4>
-              <div className="grid gap-3">
-                {earningComponents.map((comp) => {
-                  const value = componentValues.find(cv => cv.component_id === comp.id)?.amount || 0;
-                  return (
-                    <div key={comp.id} className="flex items-center gap-4">
-                      <Label className="w-40">{comp.name}</Label>
-                      <Input
-                        type="number"
-                        value={value || ''}
-                        onChange={(e) => handleComponentChange(comp.id, parseFloat(e.target.value) || 0)}
-                        placeholder="0"
-                        className="flex-1"
-                      />
-                      {comp.calculation_type === 'percentage' && (
-                        <span className="text-sm text-muted-foreground w-24">
-                          {comp.percentage_value}% of {comp.percentage_of}
-                        </span>
-                      )}
+            <ScrollArea className="flex-1 pr-4">
+              <TabsContent value="salary" className="space-y-4 mt-4">
+                <div className="grid gap-4 grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Effective From</Label>
+                    <Input
+                      type="date"
+                      value={editingSalary?.effective_from || ''}
+                      onChange={(e) => setEditingSalary({ ...editingSalary, effective_from: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Calculated Gross</Label>
+                    <div className="flex items-center h-10 px-3 border rounded-md bg-muted">
+                      <IndianRupee className="h-4 w-4 mr-1" />
+                      <span className="font-medium">{formatCurrency(calculateGross())}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            <div>
-              <h4 className="font-medium mb-3">Bank Details</h4>
-              <div className="grid gap-4 grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Bank Name</Label>
-                  <Input
-                    value={editingSalary?.bank_name || ''}
-                    onChange={(e) => setEditingSalary({ ...editingSalary, bank_name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Account Number</Label>
-                  <Input
-                    value={editingSalary?.bank_account_number || ''}
-                    onChange={(e) => setEditingSalary({ ...editingSalary, bank_account_number: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>IFSC Code</Label>
-                  <Input
-                    value={editingSalary?.ifsc_code || ''}
-                    onChange={(e) => setEditingSalary({ ...editingSalary, ifsc_code: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>PAN Number</Label>
-                  <Input
-                    value={editingSalary?.pan_number || ''}
-                    onChange={(e) => setEditingSalary({ ...editingSalary, pan_number: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
+                <Separator />
 
-            <div>
-              <h4 className="font-medium mb-3">Statutory Details</h4>
-              <div className="grid gap-4 grid-cols-3">
-                <div className="space-y-2">
-                  <Label>PF Number</Label>
-                  <Input
-                    value={editingSalary?.pf_number || ''}
-                    onChange={(e) => setEditingSalary({ ...editingSalary, pf_number: e.target.value })}
-                  />
+                <div>
+                  <h4 className="font-medium mb-3">Salary Components</h4>
+                  {earningComponents.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground border rounded-lg">
+                      No salary components configured. Please set up salary components in Settings first.
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      {earningComponents.map((comp) => {
+                        const value = componentValues.find(cv => cv.component_id === comp.id)?.amount || 0;
+                        return (
+                          <div key={comp.id} className="flex items-center gap-4">
+                            <Label className="w-40 flex-shrink-0">{comp.name}</Label>
+                            <div className="relative flex-1">
+                              <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                value={value || ''}
+                                onChange={(e) => handleComponentChange(comp.id, parseFloat(e.target.value) || 0)}
+                                placeholder="0"
+                                className="pl-10"
+                              />
+                            </div>
+                            {comp.calculation_type === 'percentage' && (
+                              <span className="text-sm text-muted-foreground w-32 flex-shrink-0">
+                                {comp.percentage_value}% of {comp.percentage_of}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label>UAN Number</Label>
-                  <Input
-                    value={editingSalary?.uan_number || ''}
-                    onChange={(e) => setEditingSalary({ ...editingSalary, uan_number: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>ESI Number</Label>
-                  <Input
-                    value={editingSalary?.esi_number || ''}
-                    onChange={(e) => setEditingSalary({ ...editingSalary, esi_number: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+              </TabsContent>
 
-          <DialogFooter>
+              <TabsContent value="bank" className="space-y-4 mt-4">
+                <div className="grid gap-4 grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Bank Name</Label>
+                    <Input
+                      value={editingSalary?.bank_name || ''}
+                      onChange={(e) => setEditingSalary({ ...editingSalary, bank_name: e.target.value })}
+                      placeholder="e.g., State Bank of India"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Account Number</Label>
+                    <Input
+                      value={editingSalary?.bank_account_number || ''}
+                      onChange={(e) => setEditingSalary({ ...editingSalary, bank_account_number: e.target.value })}
+                      placeholder="Enter account number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>IFSC Code</Label>
+                    <Input
+                      value={editingSalary?.ifsc_code || ''}
+                      onChange={(e) => setEditingSalary({ ...editingSalary, ifsc_code: e.target.value.toUpperCase() })}
+                      placeholder="e.g., SBIN0001234"
+                      className="uppercase"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>PAN Number</Label>
+                    <Input
+                      value={editingSalary?.pan_number || ''}
+                      onChange={(e) => setEditingSalary({ ...editingSalary, pan_number: e.target.value.toUpperCase() })}
+                      placeholder="e.g., ABCDE1234F"
+                      className="uppercase"
+                      maxLength={10}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="statutory" className="space-y-4 mt-4">
+                <div className="grid gap-4 grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>PF Number</Label>
+                    <Input
+                      value={editingSalary?.pf_number || ''}
+                      onChange={(e) => setEditingSalary({ ...editingSalary, pf_number: e.target.value })}
+                      placeholder="PF account number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>UAN Number</Label>
+                    <Input
+                      value={editingSalary?.uan_number || ''}
+                      onChange={(e) => setEditingSalary({ ...editingSalary, uan_number: e.target.value })}
+                      placeholder="Universal Account Number"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ESI Number</Label>
+                    <Input
+                      value={editingSalary?.esi_number || ''}
+                      onChange={(e) => setEditingSalary({ ...editingSalary, esi_number: e.target.value })}
+                      placeholder="ESI number"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
+
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Salary
+              {isRevision ? 'Create Revision' : 'Save Salary'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Salary History Dialog */}
+      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Salary History</DialogTitle>
+            <DialogDescription>
+              {selectedEmployee?.full_name} - Revision history
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {salaryHistory.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No salary history found
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Effective From</TableHead>
+                    <TableHead>Effective To</TableHead>
+                    <TableHead className="text-right">Gross Salary</TableHead>
+                    <TableHead className="text-right">CTC</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salaryHistory.map((history) => (
+                    <TableRow key={history.id}>
+                      <TableCell>{format(new Date(history.effective_from), 'dd MMM yyyy')}</TableCell>
+                      <TableCell>
+                        {history.effective_to 
+                          ? format(new Date(history.effective_to), 'dd MMM yyyy')
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">{formatCurrency(history.gross_salary)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(history.ctc)}</TableCell>
+                      <TableCell>
+                        <Badge variant={history.is_active ? 'default' : 'secondary'}>
+                          {history.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

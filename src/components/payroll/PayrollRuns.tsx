@@ -7,12 +7,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/contexts/PermissionContext';
-import { Loader2, Plus, Play, CheckCircle, XCircle, Eye, Clock } from 'lucide-react';
+import { Loader2, Plus, Play, CheckCircle, XCircle, Eye, Clock, AlertTriangle, Download, IndianRupee } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
 interface PayrollRun {
@@ -46,6 +47,16 @@ interface PayrollSettings {
   tds_enabled: boolean;
 }
 
+interface PayslipSummary {
+  id: string;
+  employee_name: string;
+  department_name: string | null;
+  gross_earnings: number;
+  total_deductions: number;
+  net_pay: number;
+  status: string;
+}
+
 const PayrollRuns: React.FC = () => {
   const { company } = useCompany();
   const { user } = useAuth();
@@ -56,6 +67,10 @@ const PayrollRuns: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedRun, setSelectedRun] = useState<PayrollRun | null>(null);
+  const [runPayslips, setRunPayslips] = useState<PayslipSummary[]>([]);
+  const [loadingPayslips, setLoadingPayslips] = useState(false);
   
   const [newRun, setNewRun] = useState({
     pay_period_start: format(startOfMonth(subMonths(new Date(), 1)), 'yyyy-MM-dd'),
@@ -84,6 +99,27 @@ const PayrollRuns: React.FC = () => {
       console.error('Error fetching payroll runs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const viewRunDetails = async (run: PayrollRun) => {
+    setSelectedRun(run);
+    setLoadingPayslips(true);
+    setDetailsDialogOpen(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('payslips')
+        .select('id, employee_name, department_name, gross_earnings, total_deductions, net_pay, status')
+        .eq('payroll_run_id', run.id)
+        .order('employee_name');
+
+      if (error) throw error;
+      setRunPayslips(data || []);
+    } catch (error) {
+      console.error('Error fetching payslips:', error);
+    } finally {
+      setLoadingPayslips(false);
     }
   };
 
@@ -319,6 +355,12 @@ const PayrollRuns: React.FC = () => {
         updates.approved_at = new Date().toISOString();
       } else if (newStatus === 'paid') {
         updates.paid_at = new Date().toISOString();
+        
+        // Also update all payslips to paid
+        await supabase
+          .from('payslips')
+          .update({ status: 'paid' })
+          .eq('payroll_run_id', runId);
       }
 
       const { error } = await supabase
@@ -329,8 +371,51 @@ const PayrollRuns: React.FC = () => {
       if (error) throw error;
       toast.success(`Payroll ${newStatus}`);
       fetchRuns();
+      
+      // Refresh details if viewing
+      if (selectedRun?.id === runId) {
+        setSelectedRun({ ...selectedRun, status: newStatus });
+      }
     } catch (error: any) {
       toast.error(error.message || 'Failed to update status');
+    }
+  };
+
+  const cancelPayrollRun = async (runId: string) => {
+    if (!confirm('Are you sure you want to cancel this payroll run? This will delete all associated payslips.')) {
+      return;
+    }
+
+    try {
+      // Delete payslip items first
+      const { data: payslips } = await supabase
+        .from('payslips')
+        .select('id')
+        .eq('payroll_run_id', runId);
+
+      if (payslips && payslips.length > 0) {
+        const payslipIds = payslips.map(p => p.id);
+        await supabase
+          .from('payslip_items')
+          .delete()
+          .in('payslip_id', payslipIds);
+        
+        await supabase
+          .from('payslips')
+          .delete()
+          .eq('payroll_run_id', runId);
+      }
+
+      await supabase
+        .from('payroll_runs')
+        .update({ status: 'cancelled' })
+        .eq('id', runId);
+
+      toast.success('Payroll run cancelled');
+      setDetailsDialogOpen(false);
+      fetchRuns();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to cancel payroll run');
     }
   };
 
@@ -404,7 +489,7 @@ const PayrollRuns: React.FC = () => {
                   <TableHead className="text-right">Deductions</TableHead>
                   <TableHead className="text-right">Net Pay</TableHead>
                   <TableHead>Status</TableHead>
-                  {canManage && <TableHead className="w-[150px]">Actions</TableHead>}
+                  <TableHead className="w-[200px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -419,31 +504,36 @@ const PayrollRuns: React.FC = () => {
                     <TableCell className="text-right">{formatCurrency(run.total_deductions)}</TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(run.total_net)}</TableCell>
                     <TableCell>{getStatusBadge(run.status)}</TableCell>
-                    {canManage && (
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {run.status === 'processed' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateStatus(run.id, 'approved')}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                          )}
-                          {run.status === 'approved' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateStatus(run.id, 'paid')}
-                            >
-                              Mark Paid
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => viewRunDetails(run)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {canManage && run.status === 'processed' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStatus(run.id, 'approved')}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Approve
+                          </Button>
+                        )}
+                        {canManage && run.status === 'approved' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStatus(run.id, 'paid')}
+                          >
+                            Mark Paid
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -452,6 +542,7 @@ const PayrollRuns: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* New Payroll Run Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -499,13 +590,131 @@ const PayrollRuns: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={processPayroll} disabled={processing}>
               {processing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               <Play className="h-4 w-4 mr-2" />
               Process Payroll
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payroll Run Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Payroll Run Details
+              {selectedRun && getStatusBadge(selectedRun.status)}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRun && (
+                <>
+                  {format(new Date(selectedRun.pay_period_start), 'dd MMM')} - {format(new Date(selectedRun.pay_period_end), 'dd MMM yyyy')}
+                  {' | '}Pay Date: {format(new Date(selectedRun.pay_date), 'dd MMM yyyy')}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedRun && (
+            <>
+              {/* Summary Cards */}
+              <div className="grid gap-4 grid-cols-4 py-4">
+                <div className="p-3 border rounded-lg">
+                  <p className="text-sm text-muted-foreground">Employees</p>
+                  <p className="text-xl font-bold">{selectedRun.employee_count}</p>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <p className="text-sm text-muted-foreground">Gross Pay</p>
+                  <p className="text-xl font-bold text-green-600">{formatCurrency(selectedRun.total_gross)}</p>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <p className="text-sm text-muted-foreground">Deductions</p>
+                  <p className="text-xl font-bold text-red-600">{formatCurrency(selectedRun.total_deductions)}</p>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <p className="text-sm text-muted-foreground">Net Pay</p>
+                  <p className="text-xl font-bold text-primary">{formatCurrency(selectedRun.total_net)}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Payslips List */}
+              <div className="flex-1 overflow-auto">
+                <h4 className="font-medium py-2">Payslips ({runPayslips.length})</h4>
+                {loadingPayslips ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead className="text-right">Gross</TableHead>
+                        <TableHead className="text-right">Deductions</TableHead>
+                        <TableHead className="text-right">Net Pay</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {runPayslips.map((payslip) => (
+                        <TableRow key={payslip.id}>
+                          <TableCell className="font-medium">{payslip.employee_name}</TableCell>
+                          <TableCell>{payslip.department_name || '-'}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(payslip.gross_earnings)}</TableCell>
+                          <TableCell className="text-right text-red-600">{formatCurrency(payslip.total_deductions)}</TableCell>
+                          <TableCell className="text-right font-medium">{formatCurrency(payslip.net_pay)}</TableCell>
+                          <TableCell>
+                            <Badge variant={payslip.status === 'paid' ? 'default' : 'secondary'}>
+                              {payslip.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+
+              {/* Actions */}
+              {canManage && (
+                <div className="flex justify-between pt-4 border-t">
+                  <div>
+                    {selectedRun.status === 'processed' && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => cancelPayrollRun(selectedRun.id)}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Cancel Run
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    {selectedRun.status === 'processed' && (
+                      <Button onClick={() => updateStatus(selectedRun.id, 'approved')}>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve
+                      </Button>
+                    )}
+                    {selectedRun.status === 'approved' && (
+                      <Button onClick={() => updateStatus(selectedRun.id, 'paid')}>
+                        Mark as Paid
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
