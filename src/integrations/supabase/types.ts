@@ -75,6 +75,219 @@ export type Database = {
           },
         ]
       }
+      attendance_overrides: {
+        Row: {
+          attendance_id: string
+          created_at: string
+          id: string
+          new_check_in: string | null
+          new_check_out: string | null
+          new_status: string
+          new_work_hours: number | null
+          original_check_in: string | null
+          original_check_out: string | null
+          original_status: string
+          original_work_hours: number | null
+          overridden_by: string
+          profile_id: string
+          reason: string
+        }
+        Insert: {
+          attendance_id: string
+          created_at?: string
+          id?: string
+          new_check_in?: string | null
+          new_check_out?: string | null
+          new_status: string
+          new_work_hours?: number | null
+          original_check_in?: string | null
+          original_check_out?: string | null
+          original_status: string
+          original_work_hours?: number | null
+          overridden_by: string
+          profile_id: string
+          reason: string
+        }
+        Update: {
+          attendance_id?: string
+          created_at?: string
+          id?: string
+          new_check_in?: string | null
+          new_check_out?: string | null
+          new_status?: string
+          new_work_hours?: number | null
+          original_check_in?: string | null
+          original_check_out?: string | null
+          original_status?: string
+          original_work_hours?: number | null
+          overridden_by?: string
+          profile_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_overrides_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_overrides_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_daily"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_overrides_overridden_by_fkey"
+            columns: ["overridden_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_overrides_overridden_by_fkey"
+            columns: ["overridden_by"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_overrides_overridden_by_fkey"
+            columns: ["overridden_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_overrides_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_overrides_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_overrides_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_policies: {
+        Row: {
+          absent_if_less_than_hours: number
+          absent_if_no_punch: boolean
+          auto_absent_enabled: boolean
+          auto_half_day_enabled: boolean
+          company_id: string
+          created_at: string
+          early_exit_deduction_enabled: boolean
+          early_exit_threshold_minutes: number
+          grace_period_minutes: number
+          half_day_max_hours: number
+          half_day_min_hours: number
+          id: string
+          is_default: boolean
+          late_deduction_enabled: boolean
+          late_deduction_per_instance: number
+          late_threshold_minutes: number
+          max_late_per_month: number
+          min_work_hours: number
+          name: string
+          overtime_after_hours: number
+          overtime_enabled: boolean
+          overtime_multiplier: number
+          shift_end_time: string
+          shift_start_time: string
+          short_hours_threshold: number
+          updated_at: string
+          working_days: Json
+        }
+        Insert: {
+          absent_if_less_than_hours?: number
+          absent_if_no_punch?: boolean
+          auto_absent_enabled?: boolean
+          auto_half_day_enabled?: boolean
+          company_id: string
+          created_at?: string
+          early_exit_deduction_enabled?: boolean
+          early_exit_threshold_minutes?: number
+          grace_period_minutes?: number
+          half_day_max_hours?: number
+          half_day_min_hours?: number
+          id?: string
+          is_default?: boolean
+          late_deduction_enabled?: boolean
+          late_deduction_per_instance?: number
+          late_threshold_minutes?: number
+          max_late_per_month?: number
+          min_work_hours?: number
+          name?: string
+          overtime_after_hours?: number
+          overtime_enabled?: boolean
+          overtime_multiplier?: number
+          shift_end_time?: string
+          shift_start_time?: string
+          short_hours_threshold?: number
+          updated_at?: string
+          working_days?: Json
+        }
+        Update: {
+          absent_if_less_than_hours?: number
+          absent_if_no_punch?: boolean
+          auto_absent_enabled?: boolean
+          auto_half_day_enabled?: boolean
+          company_id?: string
+          created_at?: string
+          early_exit_deduction_enabled?: boolean
+          early_exit_threshold_minutes?: number
+          grace_period_minutes?: number
+          half_day_max_hours?: number
+          half_day_min_hours?: number
+          id?: string
+          is_default?: boolean
+          late_deduction_enabled?: boolean
+          late_deduction_per_instance?: number
+          late_threshold_minutes?: number
+          max_late_per_month?: number
+          min_work_hours?: number
+          name?: string
+          overtime_after_hours?: number
+          overtime_enabled?: boolean
+          overtime_multiplier?: number
+          shift_end_time?: string
+          shift_start_time?: string
+          short_hours_threshold?: number
+          updated_at?: string
+          working_days?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_policies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_policies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_overview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_punches: {
         Row: {
           card_id: string | null
