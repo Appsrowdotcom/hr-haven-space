@@ -37,6 +37,7 @@ import InitializeLeaveBalances from "@/components/hr/InitializeLeaveBalances";
 import LeaveCalendarView from "@/components/hr/LeaveCalendarView";
 import { LeavePolicySettings } from "@/components/hr/LeavePolicySettings";
 import TeamLeaveBalances from "@/components/hr/TeamLeaveBalances";
+import ManageLeaveBalances from "@/components/hr/ManageLeaveBalances";
 import { leaveRequestSchema, getValidationError } from "@/lib/validations";
 
 interface LeaveType {
@@ -723,26 +724,32 @@ const LeaveManagementPage: React.FC = () => {
       <Tabs defaultValue="my-requests">
         <TabsList className="flex-wrap">
           <TabsTrigger value="my-requests">My Requests</TabsTrigger>
-          {canManageLeave && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
-          {canManageLeave && (
+          {canApproveLeave && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
+          {(canViewLeave || canManageBalance) && (
             <TabsTrigger value="team-balances">
               <Users className="h-4 w-4 mr-1" />
               Team Balances
             </TabsTrigger>
           )}
-          {canManageLeave && (
+          {canManageBalance && (
+            <TabsTrigger value="manage-balances">
+              <Settings className="h-4 w-4 mr-1" />
+              Manage Balances
+            </TabsTrigger>
+          )}
+          {(canViewLeave || canApproveLeave) && (
             <TabsTrigger value="calendar">
               <CalendarDays className="h-4 w-4 mr-1" />
               Calendar
             </TabsTrigger>
           )}
-          {canConfigureLeaveTypes && (
+          {canManagePolicy && (
             <TabsTrigger value="config">
               <Settings className="h-4 w-4 mr-1" />
               Leave Types
             </TabsTrigger>
           )}
-          {canConfigureLeaveTypes && (
+          {canManagePolicy && (
             <TabsTrigger value="policy">
               <ShieldAlert className="h-4 w-4 mr-1" />
               Policy
@@ -935,25 +942,31 @@ const LeaveManagementPage: React.FC = () => {
           </TabsContent>
         )}
 
-        {canManageLeave && (
+        {(canViewLeave || canManageBalance) && (
           <TabsContent value="team-balances">
             <TeamLeaveBalances />
           </TabsContent>
         )}
 
-        {canManageLeave && (
+        {canManageBalance && (
+          <TabsContent value="manage-balances">
+            <ManageLeaveBalances />
+          </TabsContent>
+        )}
+
+        {(canViewLeave || canApproveLeave) && (
           <TabsContent value="calendar">
             <LeaveCalendarView />
           </TabsContent>
         )}
 
-        {canConfigureLeaveTypes && (
+        {canManagePolicy && (
           <TabsContent value="config">
             <LeaveTypeConfig />
           </TabsContent>
         )}
 
-        {canConfigureLeaveTypes && (
+        {canManagePolicy && (
           <TabsContent value="policy">
             <LeavePolicySettings />
           </TabsContent>
