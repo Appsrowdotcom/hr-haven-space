@@ -108,7 +108,7 @@ export const navigationConfig: NavSection[] = [
         href: '/finance/expenses',
         icon: CreditCard,
         module: 'FINANCE',
-        permission: 'finance.view',
+        permission: 'finance.view_own_expenses',
       },
     ],
   },

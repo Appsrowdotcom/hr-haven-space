@@ -42,7 +42,7 @@ const ExpenseReports: React.FC = () => {
   const { company } = useCompany();
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
-  const canViewAll = hasPermission('finance.view_all');
+  const canViewAll = hasPermission('finance.view');
 
   const [dateRange, setDateRange] = useState({
     start: format(startOfMonth(subMonths(new Date(), 2)), 'yyyy-MM-dd'),

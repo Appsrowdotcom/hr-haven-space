@@ -6,12 +6,24 @@ import ExpenseCategories from '@/components/expenses/ExpenseCategories';
 import ExpenseReports from '@/components/expenses/ExpenseReports';
 
 const ExpensesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('my-expenses');
   const { hasPermission } = usePermissions();
   
-  const canViewAll = hasPermission('finance.view_all');
+  // Permission checks based on exact permission codes
+  const canViewOwnExpenses = hasPermission('finance.view_own_expenses');
+  const canCreateExpense = hasPermission('finance.create_expense');
+  const canViewAll = hasPermission('finance.view');
   const canApprove = hasPermission('finance.approve_expense');
-  const canManageSettings = hasPermission('finance.manage_settings');
+  const canManageCategories = hasPermission('finance.manage_categories');
+
+  // Determine default tab based on permissions
+  const getDefaultTab = () => {
+    if (canViewOwnExpenses || canCreateExpense) return 'my-expenses';
+    if (canViewAll) return 'all-expenses';
+    if (canApprove) return 'pending-approval';
+    return 'reports';
+  };
+
+  const [activeTab, setActiveTab] = useState(getDefaultTab());
 
   return (
     <div className="space-y-6">
@@ -24,16 +36,20 @@ const ExpensesPage: React.FC = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="my-expenses">My Expenses</TabsTrigger>
+          {(canViewOwnExpenses || canCreateExpense) && (
+            <TabsTrigger value="my-expenses">My Expenses</TabsTrigger>
+          )}
           {canViewAll && <TabsTrigger value="all-expenses">All Expenses</TabsTrigger>}
           {canApprove && <TabsTrigger value="pending-approval">Pending Approval</TabsTrigger>}
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          {canManageSettings && <TabsTrigger value="categories">Categories</TabsTrigger>}
+          {canViewAll && <TabsTrigger value="reports">Reports</TabsTrigger>}
+          {canManageCategories && <TabsTrigger value="categories">Categories</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="my-expenses">
-          <ExpensesList view="my" />
-        </TabsContent>
+        {(canViewOwnExpenses || canCreateExpense) && (
+          <TabsContent value="my-expenses">
+            <ExpensesList view="my" canCreate={canCreateExpense} />
+          </TabsContent>
+        )}
 
         {canViewAll && (
           <TabsContent value="all-expenses">
@@ -47,11 +63,13 @@ const ExpensesPage: React.FC = () => {
           </TabsContent>
         )}
 
-        <TabsContent value="reports">
-          <ExpenseReports />
-        </TabsContent>
+        {canViewAll && (
+          <TabsContent value="reports">
+            <ExpenseReports />
+          </TabsContent>
+        )}
 
-        {canManageSettings && (
+        {canManageCategories && (
           <TabsContent value="categories">
             <ExpenseCategories />
           </TabsContent>

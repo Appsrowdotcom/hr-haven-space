@@ -68,6 +68,7 @@ import { Separator } from '@/components/ui/separator';
 
 interface ExpensesListProps {
   view: 'my' | 'all' | 'pending';
+  canCreate?: boolean;
 }
 
 interface Expense {
@@ -96,7 +97,7 @@ interface Category {
   code: string;
 }
 
-const ExpensesList: React.FC<ExpensesListProps> = ({ view }) => {
+const ExpensesList: React.FC<ExpensesListProps> = ({ view, canCreate = true }) => {
   const { user } = useAuth();
   const { company } = useCompany();
   const { hasPermission } = usePermissions();
@@ -404,7 +405,7 @@ const ExpensesList: React.FC<ExpensesListProps> = ({ view }) => {
                 {filteredExpenses.length} expenses • Total: ₹{totalAmount.toLocaleString('en-IN')}
               </CardDescription>
             </div>
-            {view === 'my' && (
+            {view === 'my' && canCreate && (
               <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Expense
