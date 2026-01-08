@@ -253,10 +253,10 @@ export function ComplianceDocuments() {
                 </div>
                 <div>
                   <Label>Linked Requirement</Label>
-                  <Select value={formData.requirement_id} onValueChange={(v) => setFormData({ ...formData, requirement_id: v })}>
+                  <Select value={formData.requirement_id || "_none"} onValueChange={(v) => setFormData({ ...formData, requirement_id: v === "_none" ? "" : v })}>
                     <SelectTrigger><SelectValue placeholder="Select requirement" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="_none">None</SelectItem>
                       {requirements.map((r) => <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>)}
                     </SelectContent>
                   </Select>

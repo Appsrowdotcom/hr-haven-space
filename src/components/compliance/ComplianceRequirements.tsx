@@ -346,10 +346,10 @@ export function ComplianceRequirements() {
                   </div>
                   <div>
                     <Label>Assigned To</Label>
-                    <Select value={formData.assigned_to} onValueChange={(v) => setFormData({ ...formData, assigned_to: v })}>
+                    <Select value={formData.assigned_to || "_none"} onValueChange={(v) => setFormData({ ...formData, assigned_to: v === "_none" ? "" : v })}>
                       <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="_none">None</SelectItem>
                         {employees.map((e) => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}
                       </SelectContent>
                     </Select>
