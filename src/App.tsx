@@ -41,6 +41,7 @@ import {
   OnboardingPage,
 } from "./pages/hr";
 import { PayrollPage, ExpensesPage } from "./pages/finance";
+import { RevenuePage } from "./pages/revenue";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -103,7 +104,7 @@ const App = () => (
 
                     {/* Revenue Module routes */}
                     <Route element={<ProtectedRoute module="REVENUE" />}>
-                      <Route path="/revenue/*" element={<Dashboard />} />
+                      <Route path="/revenue/*" element={<RevenuePage />} />
                     </Route>
 
                     {/* Sales CRM Module routes */}

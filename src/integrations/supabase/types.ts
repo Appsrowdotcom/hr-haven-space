@@ -2581,6 +2581,227 @@ export type Database = {
           },
         ]
       }
+      revenue_categories: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_overview"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_collections: {
+        Row: {
+          amount: number
+          collection_date: string
+          company_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          payment_method: string | null
+          profile_id: string
+          reference_number: string | null
+          revenue_entry_id: string
+        }
+        Insert: {
+          amount: number
+          collection_date: string
+          company_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          profile_id: string
+          reference_number?: string | null
+          revenue_entry_id: string
+        }
+        Update: {
+          amount?: number
+          collection_date?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string | null
+          profile_id?: string
+          reference_number?: string | null
+          revenue_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_collections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_collections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_collections_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_collections_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_collections_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_collections_revenue_entry_id_fkey"
+            columns: ["revenue_entry_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_entries: {
+        Row: {
+          amount: number
+          category_id: string
+          client_name: string | null
+          company_id: string
+          created_at: string
+          currency: string
+          description: string
+          id: string
+          invoice_number: string | null
+          notes: string | null
+          profile_id: string
+          revenue_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category_id: string
+          client_name?: string | null
+          company_id: string
+          created_at?: string
+          currency?: string
+          description: string
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          profile_id: string
+          revenue_date: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string
+          client_name?: string | null
+          company_id?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          profile_id?: string
+          revenue_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_entries_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_entries_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           granted_at: string
