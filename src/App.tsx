@@ -104,7 +104,7 @@ const App = () => (
 
                     {/* Revenue Module routes */}
                     <Route element={<ProtectedRoute module="REVENUE" />}>
-                      <Route path="/revenue/*" element={<RevenuePage />} />
+                      <Route path="/revenue" element={<RevenuePage />} />
                     </Route>
 
                     {/* Sales CRM Module routes */}
