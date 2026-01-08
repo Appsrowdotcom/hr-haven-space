@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { Search, Plus, MoreHorizontal, UserPlus, Mail, Loader2, Shield, UserX, UserCheck, Building2 } from 'lucide-react';
+import { Search, Plus, MoreHorizontal, UserPlus, Mail, Loader2, Shield, UserX, UserCheck, Building2, MessageCircle, Send, Copy, Check } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { Tables } from '@/integrations/supabase/types';
 import { userInviteSchema, getValidationError } from '@/lib/validations';
 
@@ -35,6 +36,7 @@ const UserManagementPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
   const [assignRoleDialogOpen, setAssignRoleDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [inviteForm, setInviteForm] = useState({
@@ -42,7 +44,12 @@ const UserManagementPage: React.FC = () => {
     full_name: '',
     password: '',
     department_id: '',
+    phone: '',
   });
+  const [createdUserCredentials, setCreatedUserCredentials] = useState<{email: string; password: string; full_name: string; phone: string} | null>(null);
+  const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp' | 'copy'>('email');
+  const [sendingCredentials, setSendingCredentials] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -126,14 +133,73 @@ const UserManagementPage: React.FC = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      toast.success('User created successfully. You can now share the credentials.');
+      // Store credentials for sharing
+      setCreatedUserCredentials({
+        email: inviteForm.email.trim(),
+        password: inviteForm.password,
+        full_name: inviteForm.full_name.trim(),
+        phone: inviteForm.phone,
+      });
+      
+      toast.success('User created successfully!');
       setInviteDialogOpen(false);
-      setInviteForm({ email: '', full_name: '', password: '', department_id: '' });
+      setCredentialsDialogOpen(true);
+      setInviteForm({ email: '', full_name: '', password: '', department_id: '', phone: '' });
       fetchUsers();
     } catch (error: any) {
       toast.error(error.message || 'Failed to invite user');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendCredentials = async () => {
+    if (!createdUserCredentials) return;
+    
+    if (sendMethod === 'copy') {
+      const text = `Login Credentials for ${company?.name || 'HRMS'}\n\nEmail: ${createdUserCredentials.email}\nPassword: ${createdUserCredentials.password}\n\nLogin URL: ${window.location.origin}/auth`;
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success('Credentials copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
+      return;
+    }
+    
+    if (sendMethod === 'whatsapp' && !createdUserCredentials.phone) {
+      toast.error('Phone number is required for WhatsApp');
+      return;
+    }
+    
+    setSendingCredentials(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-credentials', {
+        body: {
+          email: createdUserCredentials.email,
+          full_name: createdUserCredentials.full_name,
+          password: createdUserCredentials.password,
+          phone: createdUserCredentials.phone,
+          method: sendMethod,
+          company_name: company?.name,
+          login_url: `${window.location.origin}/auth`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (sendMethod === 'whatsapp' && data?.whatsappUrl) {
+        window.open(data.whatsappUrl, '_blank');
+        toast.success('WhatsApp opened with credentials message');
+      } else {
+        toast.success('Credentials sent via email!');
+      }
+      
+      setCredentialsDialogOpen(false);
+      setCreatedUserCredentials(null);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send credentials');
+    } finally {
+      setSendingCredentials(false);
     }
   };
 
@@ -278,6 +344,19 @@ const UserManagementPage: React.FC = () => {
                 </p>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number (Optional - for WhatsApp)</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={inviteForm.phone}
+                  onChange={(e) => setInviteForm({ ...inviteForm, phone: e.target.value })}
+                  placeholder="+91 98765 43210"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Include country code for WhatsApp sharing
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="department">Department (Optional)</Label>
                 {departments.length === 0 ? (
                   <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md flex items-center justify-between">
@@ -312,6 +391,99 @@ const UserManagementPage: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Credentials Sharing Dialog */}
+      <Dialog open={credentialsDialogOpen} onOpenChange={setCredentialsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Share Credentials
+            </DialogTitle>
+            <DialogDescription>
+              Choose how to share login credentials with {createdUserCredentials?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {createdUserCredentials && (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Email:</span>
+                  <span className="font-medium">{createdUserCredentials.email}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Password:</span>
+                  <span className="font-mono text-sm">{createdUserCredentials.password}</span>
+                </div>
+              </div>
+
+              <RadioGroup value={sendMethod} onValueChange={(v) => setSendMethod(v as 'email' | 'whatsapp' | 'copy')} className="space-y-3">
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="email" id="email-method" />
+                  <Label htmlFor="email-method" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Mail className="h-4 w-4 text-blue-600" />
+                    <div>
+                      <p className="font-medium">Send via Email</p>
+                      <p className="text-xs text-muted-foreground">Send credentials to {createdUserCredentials.email}</p>
+                    </div>
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="whatsapp" id="whatsapp-method" />
+                  <Label htmlFor="whatsapp-method" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <MessageCircle className="h-4 w-4 text-green-600" />
+                    <div>
+                      <p className="font-medium">Send via WhatsApp</p>
+                      <p className="text-xs text-muted-foreground">
+                        {createdUserCredentials.phone ? `Send to ${createdUserCredentials.phone}` : 'Phone number not provided'}
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
+                  <RadioGroupItem value="copy" id="copy-method" />
+                  <Label htmlFor="copy-method" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Copy className="h-4 w-4" />
+                    <div>
+                      <p className="font-medium">Copy to Clipboard</p>
+                      <p className="text-xs text-muted-foreground">Copy credentials and share manually</p>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleSendCredentials} 
+                  disabled={sendingCredentials || (sendMethod === 'whatsapp' && !createdUserCredentials.phone)}
+                  className="flex-1"
+                >
+                  {sendingCredentials ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : sendMethod === 'copy' ? (
+                    copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />
+                  ) : sendMethod === 'whatsapp' ? (
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  {sendMethod === 'copy' ? (copied ? 'Copied!' : 'Copy Credentials') : 
+                   sendMethod === 'whatsapp' ? 'Open WhatsApp' : 'Send Email'}
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setCredentialsDialogOpen(false);
+                  setCreatedUserCredentials(null);
+                }}>
+                  Skip
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
