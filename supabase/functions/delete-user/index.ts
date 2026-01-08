@@ -81,6 +81,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Clear foreign key references before deleting the user
+    // This prevents FK constraint violations when deleting the profile
+    await supabaseAdmin.from('company_modules').update({ enabled_by: null }).eq('enabled_by', user_id);
+    await supabaseAdmin.from('departments').update({ head_id: null }).eq('head_id', user_id);
+    await supabaseAdmin.from('employee_details').update({ reporting_manager_id: null }).eq('reporting_manager_id', user_id);
+    await supabaseAdmin.from('leave_requests').update({ approved_by: null }).eq('approved_by', user_id);
+    await supabaseAdmin.from('leave_requests').update({ manager_approved_by: null }).eq('manager_approved_by', user_id);
+    await supabaseAdmin.from('leave_requests').update({ hr_approved_by: null }).eq('hr_approved_by', user_id);
+    await supabaseAdmin.from('attendance_overrides').update({ overridden_by: null }).eq('overridden_by', user_id);
+    await supabaseAdmin.from('expenses').update({ approved_by: null }).eq('approved_by', user_id);
+    await supabaseAdmin.from('payroll_runs').update({ approved_by: null }).eq('approved_by', user_id);
+    await supabaseAdmin.from('payroll_runs').update({ processed_by: null }).eq('processed_by', user_id);
+    await supabaseAdmin.from('employee_onboarding_items').update({ completed_by: null }).eq('completed_by', user_id);
+
     // Delete the user from auth (this will cascade to profiles due to foreign key)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
 
