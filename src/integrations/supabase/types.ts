@@ -704,6 +704,415 @@ export type Database = {
           },
         ]
       }
+      compliance_audit_items: {
+        Row: {
+          audit_id: string
+          created_at: string
+          description: string | null
+          evidence_url: string | null
+          id: string
+          notes: string | null
+          requirement_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          audit_id: string
+          created_at?: string
+          description?: string | null
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          requirement_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          audit_id?: string
+          created_at?: string
+          description?: string | null
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          requirement_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_audit_items_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audit_items_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audit_items_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audit_items_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audit_items_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_audits: {
+        Row: {
+          audit_type: string
+          auditor_name: string | null
+          auditor_organization: string | null
+          company_id: string
+          completed_date: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          findings: string | null
+          id: string
+          recommendations: string | null
+          scheduled_date: string
+          score: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audit_type?: string
+          auditor_name?: string | null
+          auditor_organization?: string | null
+          company_id: string
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          findings?: string | null
+          id?: string
+          recommendations?: string | null
+          scheduled_date: string
+          score?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audit_type?: string
+          auditor_name?: string | null
+          auditor_organization?: string | null
+          company_id?: string
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          findings?: string | null
+          id?: string
+          recommendations?: string | null
+          scheduled_date?: string
+          score?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_audits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audits_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audits_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_audits_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_documents: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          document_type: string
+          effective_date: string | null
+          expiry_date: string | null
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
+          id: string
+          is_active: boolean
+          requirement_id: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          version: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          document_type?: string
+          effective_date?: string | null
+          expiry_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean
+          requirement_id?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          document_type?: string
+          effective_date?: string | null
+          expiry_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          is_active?: boolean
+          requirement_id?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_requirements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_requirements: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          next_due_date: string | null
+          notes: string | null
+          priority: string
+          recurrence: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          priority?: string
+          recurrence?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          priority?: string
+          recurrence?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_requirements_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employee_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employee_profile_complete"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_requirements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           company_id: string

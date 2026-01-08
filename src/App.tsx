@@ -42,6 +42,7 @@ import {
 } from "./pages/hr";
 import { PayrollPage, ExpensesPage } from "./pages/finance";
 import { RevenuePage } from "./pages/revenue";
+import { CompliancePage } from "./pages/compliance";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -114,7 +115,7 @@ const App = () => (
 
                     {/* Compliance Module routes */}
                     <Route element={<ProtectedRoute module="COMPLIANCE" />}>
-                      <Route path="/compliance/*" element={<Dashboard />} />
+                      <Route path="/compliance" element={<CompliancePage />} />
                     </Route>
 
                     {/* Admin Module routes */}
