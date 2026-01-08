@@ -11,7 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { User, Building2, Phone, Mail, MapPin, Calendar, Briefcase, Shield, Save, Loader2 } from 'lucide-react';
+import { User, Building2, Phone, Mail, MapPin, Calendar, Briefcase, Shield, Save, Loader2, Lock } from 'lucide-react';
+import ChangePassword from '@/components/profile/ChangePassword';
 
 interface EmployeeDetails {
   designation: string | null;
@@ -191,7 +192,7 @@ const ProfilePage = () => {
 
       {/* Profile Tabs */}
       <Tabs defaultValue="basic" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="basic">
             <User className="h-4 w-4 mr-2" />
             Basic
@@ -207,6 +208,10 @@ const ProfilePage = () => {
           <TabsTrigger value="emergency">
             <Phone className="h-4 w-4 mr-2" />
             Emergency
+          </TabsTrigger>
+          <TabsTrigger value="security">
+            <Lock className="h-4 w-4 mr-2" />
+            Security
           </TabsTrigger>
         </TabsList>
 
@@ -457,6 +462,11 @@ const ProfilePage = () => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Security Tab */}
+        <TabsContent value="security">
+          <ChangePassword />
         </TabsContent>
       </Tabs>
     </div>

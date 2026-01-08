@@ -14,6 +14,8 @@ import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
 import Dashboard from "./pages/Dashboard";
 import ProfilePage from "./pages/ProfilePage";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Unauthorized from "./pages/Unauthorized";
 import ModuleDisabled from "./pages/ModuleDisabled";
 import NotFound from "./pages/NotFound";
@@ -54,6 +56,8 @@ const App = () => (
                 <Routes>
                   {/* Public routes */}
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/unauthorized" element={<Unauthorized />} />
                   <Route path="/module-disabled" element={<ModuleDisabled />} />
 
