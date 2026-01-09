@@ -365,6 +365,9 @@ const UserManagementPage: React.FC = () => {
                   </Select>
                 )}
               </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md text-sm text-amber-700 dark:text-amber-300">
+                <strong>Tip:</strong> After creating the user, you'll be able to share credentials via Copy, WhatsApp, or Email.
+              </div>
               <Button onClick={handleInviteUser} disabled={saving || !inviteForm.email || !inviteForm.password || !inviteForm.full_name} className="w-full">
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                 Create User
