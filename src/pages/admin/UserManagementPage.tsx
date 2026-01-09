@@ -14,8 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { Search, Plus, MoreHorizontal, UserPlus, Mail, Loader2, Shield, UserX, UserCheck, Building2, MessageCircle, Send, Copy, Check, Trash2, AlertTriangle } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Search, MoreHorizontal, UserPlus, Mail, Loader2, Shield, UserX, UserCheck, Building2, MessageCircle, Copy, Check, Trash2, AlertTriangle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { Tables } from '@/integrations/supabase/types';
 import { userInviteSchema, getValidationError } from '@/lib/validations';
@@ -48,7 +47,7 @@ const UserManagementPage: React.FC = () => {
     phone: '',
   });
   const [createdUserCredentials, setCreatedUserCredentials] = useState<{email: string; password: string; full_name: string; phone: string} | null>(null);
-  const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp' | 'copy'>('email');
+  
   const [sendingCredentials, setSendingCredentials] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState('');
@@ -163,55 +162,6 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
-  const handleSendCredentials = async () => {
-    if (!createdUserCredentials) return;
-    
-    if (sendMethod === 'copy') {
-      const text = `Login Credentials for ${company?.name || 'HRMS'}\n\nEmail: ${createdUserCredentials.email}\nPassword: ${createdUserCredentials.password}\n\nLogin URL: ${window.location.origin}/auth`;
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      toast.success('Credentials copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-      return;
-    }
-    
-    if (sendMethod === 'whatsapp' && !createdUserCredentials.phone) {
-      toast.error('Phone number is required for WhatsApp');
-      return;
-    }
-    
-    setSendingCredentials(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-credentials', {
-        body: {
-          email: createdUserCredentials.email,
-          full_name: createdUserCredentials.full_name,
-          password: createdUserCredentials.password,
-          phone: createdUserCredentials.phone,
-          method: sendMethod,
-          company_name: company?.name,
-          login_url: `${window.location.origin}/auth`,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      if (sendMethod === 'whatsapp' && data?.whatsappUrl) {
-        window.open(data.whatsappUrl, '_blank');
-        toast.success('WhatsApp opened with credentials message');
-      } else {
-        toast.success('Credentials sent via email!');
-      }
-      
-      setCredentialsDialogOpen(false);
-      setCreatedUserCredentials(null);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to send credentials');
-    } finally {
-      setSendingCredentials(false);
-    }
-  };
 
   const handleAssignRole = async () => {
     if (!selectedUser || !selectedRoleId || !user?.id) return;
@@ -425,15 +375,21 @@ const UserManagementPage: React.FC = () => {
       </div>
 
       {/* Credentials Sharing Dialog */}
-      <Dialog open={credentialsDialogOpen} onOpenChange={setCredentialsDialogOpen}>
+      <Dialog open={credentialsDialogOpen} onOpenChange={(open) => {
+        setCredentialsDialogOpen(open);
+        if (!open) {
+          setCreatedUserCredentials(null);
+          setCopied(false);
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Send className="h-5 w-5" />
-              Share Credentials
+              <Check className="h-5 w-5 text-green-500" />
+              User Created Successfully!
             </DialogTitle>
             <DialogDescription>
-              Choose how to share login credentials with {createdUserCredentials?.full_name}
+              Share login credentials with {createdUserCredentials?.full_name}. You can copy them now or send via email/WhatsApp.
             </DialogDescription>
           </DialogHeader>
           
@@ -450,68 +406,91 @@ const UserManagementPage: React.FC = () => {
                 </div>
               </div>
 
-              <RadioGroup value={sendMethod} onValueChange={(v) => setSendMethod(v as 'email' | 'whatsapp' | 'copy')} className="space-y-3">
-                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <RadioGroupItem value="email" id="email-method" />
-                  <Label htmlFor="email-method" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Mail className="h-4 w-4 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Send via Email</p>
-                      <p className="text-xs text-muted-foreground">Send credentials to {createdUserCredentials.email}</p>
-                    </div>
-                  </Label>
+              {/* Quick Copy Button */}
+              <Button 
+                onClick={() => {
+                  const text = `Login Credentials for ${company?.name || 'HRMS'}\n\nEmail: ${createdUserCredentials.email}\nPassword: ${createdUserCredentials.password}\n\nLogin URL: ${window.location.origin}/auth`;
+                  navigator.clipboard.writeText(text);
+                  setCopied(true);
+                  toast.success('Credentials copied to clipboard!');
+                  setTimeout(() => setCopied(false), 2000);
+                }} 
+                className="w-full"
+                variant={copied ? "default" : "outline"}
+              >
+                {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                {copied ? 'Copied!' : 'Copy Credentials to Clipboard'}
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
                 </div>
-                
-                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <RadioGroupItem value="whatsapp" id="whatsapp-method" />
-                  <Label htmlFor="whatsapp-method" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <MessageCircle className="h-4 w-4 text-green-600" />
-                    <div>
-                      <p className="font-medium">Send via WhatsApp</p>
-                      <p className="text-xs text-muted-foreground">
-                        {createdUserCredentials.phone ? `Send to ${createdUserCredentials.phone}` : 'Phone number not provided'}
-                      </p>
-                    </div>
-                  </Label>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or share via</span>
                 </div>
-                
-                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <RadioGroupItem value="copy" id="copy-method" />
-                  <Label htmlFor="copy-method" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Copy className="h-4 w-4" />
-                    <div>
-                      <p className="font-medium">Copy to Clipboard</p>
-                      <p className="text-xs text-muted-foreground">Copy credentials and share manually</p>
-                    </div>
-                  </Label>
-                </div>
-              </RadioGroup>
+              </div>
 
               <div className="flex gap-2">
                 <Button 
-                  onClick={handleSendCredentials} 
-                  disabled={sendingCredentials || (sendMethod === 'whatsapp' && !createdUserCredentials.phone)}
+                  variant="outline"
                   className="flex-1"
+                  onClick={() => {
+                    if (!createdUserCredentials.phone) {
+                      toast.error('Phone number is required for WhatsApp');
+                      return;
+                    }
+                    const message = `Login Credentials for ${company?.name || 'HRMS'}\n\nEmail: ${createdUserCredentials.email}\nPassword: ${createdUserCredentials.password}\n\nLogin URL: ${window.location.origin}/auth`;
+                    const phone = createdUserCredentials.phone.replace(/[^0-9]/g, '');
+                    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                    toast.success('WhatsApp opened with credentials');
+                  }}
+                  disabled={!createdUserCredentials.phone}
                 >
-                  {sendingCredentials ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : sendMethod === 'copy' ? (
-                    copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />
-                  ) : sendMethod === 'whatsapp' ? (
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Send className="mr-2 h-4 w-4" />
-                  )}
-                  {sendMethod === 'copy' ? (copied ? 'Copied!' : 'Copy Credentials') : 
-                   sendMethod === 'whatsapp' ? 'Open WhatsApp' : 'Send Email'}
+                  <MessageCircle className="mr-2 h-4 w-4 text-green-600" />
+                  WhatsApp
                 </Button>
-                <Button variant="outline" onClick={() => {
-                  setCredentialsDialogOpen(false);
-                  setCreatedUserCredentials(null);
-                }}>
-                  Skip
+                
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={async () => {
+                    setSendingCredentials(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke('send-credentials', {
+                        body: {
+                          email: createdUserCredentials.email,
+                          full_name: createdUserCredentials.full_name,
+                          password: createdUserCredentials.password,
+                          phone: createdUserCredentials.phone,
+                          method: 'email',
+                          company_name: company?.name,
+                          login_url: `${window.location.origin}/auth`,
+                        },
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      toast.success('Credentials sent via email!');
+                    } catch (error: any) {
+                      toast.error(error.message || 'Failed to send email. Copy credentials instead.');
+                    } finally {
+                      setSendingCredentials(false);
+                    }
+                  }}
+                  disabled={sendingCredentials}
+                >
+                  {sendingCredentials ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4 text-blue-600" />}
+                  Email
                 </Button>
               </div>
+
+              <Button variant="ghost" className="w-full" onClick={() => {
+                setCredentialsDialogOpen(false);
+                setCreatedUserCredentials(null);
+              }}>
+                Done
+              </Button>
             </div>
           )}
         </DialogContent>
