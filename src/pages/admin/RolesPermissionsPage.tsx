@@ -401,9 +401,9 @@ const RolesPermissionsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Roles & Permissions</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Roles & Permissions</h1>
           <p className="text-muted-foreground">Define roles and assign permissions</p>
         </div>
         <Dialog open={createDialogOpen} onOpenChange={handleCloseCreateDialog}>
@@ -413,7 +413,7 @@ const RolesPermissionsPage: React.FC = () => {
               Create Role
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Role</DialogTitle>
               <DialogDescription>
@@ -465,7 +465,7 @@ const RolesPermissionsPage: React.FC = () => {
 
       {/* Edit Role Dialog */}
       <Dialog open={!!editingRole} onOpenChange={(open) => !open && handleCloseDialog()}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-full sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Role</DialogTitle>
             <DialogDescription>
