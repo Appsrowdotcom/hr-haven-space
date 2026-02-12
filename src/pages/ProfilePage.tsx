@@ -192,26 +192,26 @@ const ProfilePage = () => {
 
       {/* Profile Tabs */}
       <Tabs defaultValue="basic" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="basic">
-            <User className="h-4 w-4 mr-2" />
-            Basic
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1">
+          <TabsTrigger value="basic" className="text-xs sm:text-sm">
+            <User className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Basic</span>
           </TabsTrigger>
-          <TabsTrigger value="employment">
-            <Briefcase className="h-4 w-4 mr-2" />
-            Employment
+          <TabsTrigger value="employment" className="text-xs sm:text-sm">
+            <Briefcase className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Employment</span>
           </TabsTrigger>
-          <TabsTrigger value="personal">
-            <Shield className="h-4 w-4 mr-2" />
-            Personal
+          <TabsTrigger value="personal" className="text-xs sm:text-sm">
+            <Shield className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Personal</span>
           </TabsTrigger>
-          <TabsTrigger value="emergency">
-            <Phone className="h-4 w-4 mr-2" />
-            Emergency
+          <TabsTrigger value="emergency" className="text-xs sm:text-sm">
+            <Phone className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Emergency</span>
           </TabsTrigger>
-          <TabsTrigger value="security">
-            <Lock className="h-4 w-4 mr-2" />
-            Security
+          <TabsTrigger value="security" className="text-xs sm:text-sm">
+            <Lock className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Security</span>
           </TabsTrigger>
         </TabsList>
 
@@ -225,7 +225,7 @@ const ProfilePage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="full_name">Full Name</Label>
                   <Input
@@ -270,7 +270,7 @@ const ProfilePage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Designation</Label>
                   <Input value={detailsForm.designation || ''} disabled />
@@ -305,7 +305,7 @@ const ProfilePage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
                   <Input
@@ -363,7 +363,7 @@ const ProfilePage = () => {
                   onChange={(e) => setDetailsForm({ ...detailsForm, address: e.target.value })}
                 />
               </div>
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
                   <Label>City</Label>
                   <Input
@@ -416,7 +416,7 @@ const ProfilePage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Contact Name</Label>
                   <Input
