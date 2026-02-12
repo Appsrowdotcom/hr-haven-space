@@ -44,7 +44,7 @@ const ForgotPassword: React.FC = () => {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
             <Building2 className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Forgot Password</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">Forgot Password</CardTitle>
           <CardDescription>
             {emailSent
               ? 'Check your email for the reset link'
@@ -54,12 +54,12 @@ const ForgotPassword: React.FC = () => {
         <CardContent>
           {emailSent ? (
             <div className="space-y-4">
-              <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg text-center">
-                <Mail className="h-12 w-12 mx-auto mb-3 text-green-600" />
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  We've sent a password reset link to <strong>{email}</strong>. 
-                  Please check your inbox and follow the instructions.
-                </p>
+               <div className="p-4 bg-accent/20 border border-accent rounded-lg text-center">
+                 <Mail className="h-12 w-12 mx-auto mb-3 text-accent" />
+                 <p className="text-sm text-accent-foreground">
+                   We've sent a password reset link to <strong>{email}</strong>. 
+                   Please check your inbox and follow the instructions.
+                 </p>
               </div>
               <Button
                 variant="outline"
