@@ -29,14 +29,14 @@ const RevenuePage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Revenue & Collections</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Revenue & Collections</h1>
         <p className="text-muted-foreground">
           Track revenue entries, manage collections, and view performance metrics.
         </p>
       </div>
 
       <Tabs defaultValue={getDefaultTab()} className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           {canView && <TabsTrigger value="dashboard">Dashboard</TabsTrigger>}
           {canViewOwn && <TabsTrigger value="my-revenue">My Revenue</TabsTrigger>}
           {canView && <TabsTrigger value="all-revenue">All Revenue</TabsTrigger>}
