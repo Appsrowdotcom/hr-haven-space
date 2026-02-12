@@ -255,10 +255,11 @@ const AttendanceOverride: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4">
         <Button 
           variant={activeTab === 'records' ? 'default' : 'outline'} 
           onClick={() => setActiveTab('records')}
+          className="flex-1 sm:flex-none"
         >
           <Edit2 className="mr-2 h-4 w-4" />
           Override Records
@@ -266,6 +267,7 @@ const AttendanceOverride: React.FC = () => {
         <Button 
           variant={activeTab === 'history' ? 'default' : 'outline'} 
           onClick={() => setActiveTab('history')}
+          className="flex-1 sm:flex-none"
         >
           <History className="mr-2 h-4 w-4" />
           Override History
@@ -310,13 +312,14 @@ const AttendanceOverride: React.FC = () => {
                 <p>No attendance records for {format(new Date(selectedDate), 'MMMM d, yyyy')}</p>
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Employee</TableHead>
                     <TableHead>Check In</TableHead>
-                    <TableHead>Check Out</TableHead>
-                    <TableHead>Work Hours</TableHead>
+                    <TableHead className="hidden sm:table-cell">Check Out</TableHead>
+                    <TableHead className="hidden sm:table-cell">Work Hours</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -327,12 +330,12 @@ const AttendanceOverride: React.FC = () => {
                       <TableCell>
                         <div>
                           <p className="font-medium">{record.profiles.full_name || 'Unknown'}</p>
-                          <p className="text-sm text-muted-foreground">{record.profiles.email}</p>
+                          <p className="text-sm text-muted-foreground hidden sm:block">{record.profiles.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>{formatTime(record.check_in)}</TableCell>
-                      <TableCell>{formatTime(record.check_out)}</TableCell>
-                      <TableCell>{record.work_hours ? `${record.work_hours}h` : '-'}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{formatTime(record.check_out)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{record.work_hours ? `${record.work_hours}h` : '-'}</TableCell>
                       <TableCell>{getStatusBadge(record.status)}</TableCell>
                       <TableCell className="text-right">
                         <Button
@@ -340,14 +343,15 @@ const AttendanceOverride: React.FC = () => {
                           size="sm"
                           onClick={() => handleOpenOverride(record)}
                         >
-                          <Edit2 className="h-4 w-4 mr-1" />
-                          Override
+                          <Edit2 className="h-4 w-4 sm:mr-1" />
+                          <span className="hidden sm:inline">Override</span>
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -369,21 +373,22 @@ const AttendanceOverride: React.FC = () => {
                 <p>No override history found</p>
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Employee</TableHead>
                     <TableHead>Change</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead>Overridden By</TableHead>
+                    <TableHead className="hidden sm:table-cell">Reason</TableHead>
+                    <TableHead className="hidden sm:table-cell">Overridden By</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {overrideHistory.map((record) => (
                     <TableRow key={record.id}>
-                      <TableCell className="font-medium">
-                        {format(new Date(record.created_at), 'MMM d, yyyy HH:mm')}
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {format(new Date(record.created_at), 'MMM d, yyyy')}
                       </TableCell>
                       <TableCell>{record.employee.full_name || record.employee.email}</TableCell>
                       <TableCell>
@@ -393,19 +398,20 @@ const AttendanceOverride: React.FC = () => {
                           {getStatusBadge(record.new_status)}
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate">{record.reason}</TableCell>
-                      <TableCell>{record.overrider.full_name || record.overrider.email}</TableCell>
+                      <TableCell className="hidden sm:table-cell max-w-[200px] truncate">{record.reason}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{record.overrider.full_name || record.overrider.email}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>
       )}
 
       <Dialog open={isOverrideDialogOpen} onOpenChange={setIsOverrideDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-full sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Override Attendance Record</DialogTitle>
             <DialogDescription>

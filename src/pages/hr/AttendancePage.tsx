@@ -265,7 +265,7 @@ const AttendancePage: React.FC = () => {
                     <h4 className="text-sm font-medium mb-3">Today's Punch Log</h4>
                     <div className="space-y-2">
                       {todayPunches.map((punch, index) => (
-                        <div key={punch.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                        <div key={punch.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted/30 rounded-lg gap-2">
                           <div className="flex items-center gap-3">
                             <span className="text-xs text-muted-foreground w-6">#{index + 1}</span>
                             {getPunchTypeBadge(punch.punch_type)}
@@ -274,7 +274,7 @@ const AttendancePage: React.FC = () => {
                           <div className="flex items-center gap-2">
                             {getSourceBadge(punch.source)}
                             {punch.device_location && (
-                              <span className="text-xs text-muted-foreground">{punch.device_location}</span>
+                              <span className="text-xs text-muted-foreground hidden sm:inline">{punch.device_location}</span>
                             )}
                           </div>
                         </div>

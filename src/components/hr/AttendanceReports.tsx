@@ -181,11 +181,11 @@ const AttendanceReports: React.FC = () => {
       {/* Filters */}
       <Card>
         <CardContent className="py-4">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-end">
+            <div className="space-y-2 w-full sm:w-auto">
               <Label>Month</Label>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -195,10 +195,10 @@ const AttendanceReports: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 w-full sm:w-auto">
               <Label>Department</Label>
               <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
                 <SelectContent>
@@ -209,7 +209,7 @@ const AttendanceReports: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" onClick={exportToCSV} disabled={summaryData.length === 0}>
+            <Button variant="outline" onClick={exportToCSV} disabled={summaryData.length === 0} className="w-full sm:w-auto">
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
@@ -295,24 +295,25 @@ const AttendanceReports: React.FC = () => {
               <p>No employee data found</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Employee</TableHead>
-                  <TableHead>Department</TableHead>
+                  <TableHead className="hidden sm:table-cell">Department</TableHead>
                   <TableHead className="text-center">Present</TableHead>
                   <TableHead className="text-center">Absent</TableHead>
-                  <TableHead className="text-center">Half Day</TableHead>
-                  <TableHead className="text-center">Leave</TableHead>
-                  <TableHead className="text-center">Avg Hours</TableHead>
-                  <TableHead className="text-center">Late</TableHead>
+                  <TableHead className="text-center hidden sm:table-cell">Half Day</TableHead>
+                  <TableHead className="text-center hidden sm:table-cell">Leave</TableHead>
+                  <TableHead className="text-center hidden md:table-cell">Avg Hours</TableHead>
+                  <TableHead className="text-center hidden md:table-cell">Late</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {summaryData.map((row) => (
                   <TableRow key={row.profile_id}>
                     <TableCell className="font-medium">{row.full_name}</TableCell>
-                    <TableCell>{row.department_name || '-'}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{row.department_name || '-'}</TableCell>
                     <TableCell className="text-center">
                       <Badge className="bg-green-500/10 text-green-600 border-green-200">{row.total_present}</Badge>
                     </TableCell>
@@ -323,22 +324,22 @@ const AttendanceReports: React.FC = () => {
                         <span className="text-muted-foreground">0</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden sm:table-cell">
                       {row.total_half_day > 0 ? (
                         <Badge className="bg-amber-500/10 text-amber-600">{row.total_half_day}</Badge>
                       ) : (
                         <span className="text-muted-foreground">0</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden sm:table-cell">
                       {row.total_leave > 0 ? (
                         <Badge className="bg-blue-500/10 text-blue-600">{row.total_leave}</Badge>
                       ) : (
                         <span className="text-muted-foreground">0</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-center">{row.avg_work_hours}h</TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-center hidden md:table-cell">{row.avg_work_hours}h</TableCell>
+                    <TableCell className="text-center hidden md:table-cell">
                       {row.late_arrivals > 0 ? (
                         <Badge variant="outline" className="text-amber-600">{row.late_arrivals}</Badge>
                       ) : (
@@ -349,6 +350,7 @@ const AttendanceReports: React.FC = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
