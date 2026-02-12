@@ -537,13 +537,14 @@ const UserManagementPage: React.FC = () => {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead>Roles</TableHead>
+                  <TableHead className="hidden sm:table-cell">Roles</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead className="hidden sm:table-cell">Joined</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -563,7 +564,7 @@ const UserManagementPage: React.FC = () => {
                           <p className="text-sm text-muted-foreground">{userProfile.email}</p>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <div className="flex flex-wrap gap-1">
                           {userProfile.user_roles?.map((ur) => (
                             <Badge key={ur.id} variant="secondary" className="text-xs">
@@ -576,7 +577,7 @@ const UserManagementPage: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>{getStatusBadge(userProfile.status)}</TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
                         {new Date(userProfile.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
@@ -586,7 +587,7 @@ const UserManagementPage: React.FC = () => {
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="bg-popover">
                             <DropdownMenuItem
                               onClick={() => {
                                 setSelectedUser(userProfile);
@@ -642,6 +643,7 @@ const UserManagementPage: React.FC = () => {
                 )}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

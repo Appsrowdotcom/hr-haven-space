@@ -125,8 +125,8 @@ const EmployeeDirectoryPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Employee Directory</h1>
-        <p className="text-muted-foreground">View and manage employee information</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Employee Directory</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">View and manage employee information</p>
       </div>
 
       <Tabs defaultValue="employees">
