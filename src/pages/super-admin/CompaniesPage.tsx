@@ -158,12 +158,12 @@ export default function CompaniesPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <CardTitle>All Companies</CardTitle>
               <CardDescription>{companies.length} companies registered</CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search companies..."
@@ -175,15 +175,16 @@ export default function CompaniesPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Company</TableHead>
-                <TableHead>Industry</TableHead>
-                <TableHead>Size</TableHead>
+                <TableHead className="hidden sm:table-cell">Industry</TableHead>
+                <TableHead className="hidden md:table-cell">Size</TableHead>
                 <TableHead>Users</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead className="hidden sm:table-cell">Created</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -210,8 +211,8 @@ export default function CompaniesPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{company.industry || '-'}</TableCell>
-                    <TableCell>{company.size || '-'}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{company.industry || '-'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{company.size || '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4 text-muted-foreground" />
@@ -219,7 +220,7 @@ export default function CompaniesPage() {
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(company.subscription_status || 'none')}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">
                       {new Date(company.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
@@ -252,6 +253,7 @@ export default function CompaniesPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

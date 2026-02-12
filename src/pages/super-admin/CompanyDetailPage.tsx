@@ -240,7 +240,7 @@ export default function CompanyDetailPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -291,7 +291,7 @@ export default function CompanyDetailPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="users">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
           <TabsTrigger value="modules">Modules</TabsTrigger>
@@ -304,13 +304,14 @@ export default function CompanyDetailPage() {
               <CardDescription>{users.length} users in this company</CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
-                    <TableHead>Email</TableHead>
+                    <TableHead className="hidden sm:table-cell">Email</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead className="hidden sm:table-cell">Joined</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -324,14 +325,14 @@ export default function CompanyDetailPage() {
                     users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.full_name || 'Unknown'}</TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           <div className="flex items-center gap-2">
                             <Mail className="h-4 w-4 text-muted-foreground" />
                             {user.email}
                           </div>
                         </TableCell>
                         <TableCell>{getStatusBadge(user.status)}</TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="hidden sm:table-cell text-muted-foreground">
                           {new Date(user.created_at).toLocaleDateString()}
                         </TableCell>
                       </TableRow>
@@ -339,6 +340,7 @@ export default function CompanyDetailPage() {
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

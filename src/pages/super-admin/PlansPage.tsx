@@ -206,9 +206,9 @@ export default function PlansPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Subscription Plans</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Subscription Plans</h1>
           <p className="text-muted-foreground">Manage pricing and features for each plan</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -218,7 +218,7 @@ export default function PlansPage() {
               Add Plan
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-full sm:max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingPlan ? 'Edit Plan' : 'Create Plan'}</DialogTitle>
               <DialogDescription>
@@ -335,7 +335,7 @@ export default function PlansPage() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => (
           <Card key={plan.id} className={!plan.is_active ? 'opacity-60' : ''}>
             <CardHeader>

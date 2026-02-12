@@ -101,12 +101,12 @@ export default function SubscriptionsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <CardTitle>All Subscriptions</CardTitle>
               <CardDescription>{subscriptions.length} total subscriptions</CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search by company..."
@@ -118,14 +118,15 @@ export default function SubscriptionsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Company</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Billing</TableHead>
-                <TableHead>Period End</TableHead>
+                <TableHead className="hidden sm:table-cell">Billing</TableHead>
+                <TableHead className="hidden md:table-cell">Period End</TableHead>
                 <TableHead>Amount</TableHead>
               </TableRow>
             </TableHeader>
@@ -154,8 +155,8 @@ export default function SubscriptionsPage() {
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(sub.status)}</TableCell>
-                    <TableCell className="capitalize">{sub.billing_cycle}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="hidden sm:table-cell capitalize">{sub.billing_cycle}</TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
                       {new Date(sub.current_period_end).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="font-medium">
@@ -171,6 +172,7 @@ export default function SubscriptionsPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

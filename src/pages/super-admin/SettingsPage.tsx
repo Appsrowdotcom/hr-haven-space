@@ -153,9 +153,9 @@ export default function SuperAdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Settings</h1>
           <p className="text-muted-foreground">Platform configuration and preferences</p>
         </div>
         <div className="flex gap-2">
@@ -171,7 +171,7 @@ export default function SuperAdminSettingsPage() {
       </div>
 
       <Tabs defaultValue="branding" className="space-y-6">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="branding" className="gap-2">
             <Palette className="h-4 w-4" />
             Branding
@@ -284,7 +284,7 @@ export default function SuperAdminSettingsPage() {
                 <p className="text-xs text-muted-foreground mb-3">
                   Modules that will be enabled by default for new companies
                 </p>
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
                   {MODULE_OPTIONS.map(module => (
                     <div
                       key={module.code}
