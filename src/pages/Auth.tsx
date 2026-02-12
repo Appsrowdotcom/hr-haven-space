@@ -177,7 +177,7 @@ const Auth: React.FC = () => {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
             <Building2 className="h-6 w-6 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">HRMS Platform</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">HRMS Platform</CardTitle>
           <CardDescription>
             Manage your workforce efficiently
           </CardDescription>
