@@ -278,8 +278,8 @@ const CompanySettingsPage: React.FC = () => {
       </div>
 
       <Tabs defaultValue={defaultTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile" className="gap-2">
+       <TabsList className="flex-wrap h-auto">
+           <TabsTrigger value="profile" className="gap-2">
             <Building2 className="h-4 w-4" />
             Profile
           </TabsTrigger>

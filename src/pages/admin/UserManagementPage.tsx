@@ -320,11 +320,11 @@ const UserManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">User Management</h1>
-          <p className="text-muted-foreground">Manage team members and their roles</p>
-        </div>
+       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+         <div>
+           <h1 className="text-xl sm:text-2xl font-bold text-foreground">User Management</h1>
+           <p className="text-muted-foreground">Manage team members and their roles</p>
+         </div>
         <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
           <DialogTrigger asChild>
             <Button>
