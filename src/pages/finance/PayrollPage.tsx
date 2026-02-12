@@ -27,14 +27,14 @@ const PayrollPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Payroll Management</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Payroll Management</h1>
         <p className="text-muted-foreground">
           Manage employee salaries, run payroll, and generate payslips
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="flex-wrap h-auto w-full lg:w-auto lg:inline-flex">
           {canManagePayroll && (
             <TabsTrigger value="runs" className="flex items-center gap-2">
               <Play className="h-4 w-4" />

@@ -28,14 +28,14 @@ const ExpensesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Expenses</h1>
         <p className="text-muted-foreground">
           Submit, track, and manage expense claims
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           {(canViewOwnExpenses || canCreateExpense) && (
             <TabsTrigger value="my-expenses">My Expenses</TabsTrigger>
           )}
