@@ -341,13 +341,13 @@ const OnboardingPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Onboarding</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Onboarding</h1>
           <p className="text-muted-foreground">Manage employee onboarding checklists</p>
         </div>
         {canManageOnboarding && (
-          <>
+          <div className="flex flex-wrap gap-2">
             <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -355,7 +355,7 @@ const OnboardingPage: React.FC = () => {
                   New Template
                 </Button>
               </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-full sm:max-w-lg max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Onboarding Template</DialogTitle>
               </DialogHeader>
@@ -384,7 +384,7 @@ const OnboardingPage: React.FC = () => {
             </DialogContent>
           </Dialog>
           <AssignOnboardingDialog templates={templates} onAssigned={() => { fetchEmployeeOnboardings(); fetchMyOnboarding(); }} />
-          </>
+          </div>
         )}
       </div>
 
@@ -559,7 +559,7 @@ const OnboardingPage: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {employeeOnboardings.map((onboarding) => (
-                      <div key={onboarding.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                      <div key={onboarding.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border rounded-lg">
                         <div className="flex-1">
                           <p className="font-medium">{onboarding.employee_name}</p>
                           <p className="text-sm text-muted-foreground">{onboarding.template_name}</p>

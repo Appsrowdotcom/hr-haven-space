@@ -211,12 +211,12 @@ const AttendancePage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Attendance</h1>
         <p className="text-muted-foreground">Track your daily attendance via card punch system</p>
       </div>
 
       <Tabs defaultValue="my-attendance">
-        <TabsList className="flex-wrap">
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="my-attendance">My Attendance</TabsTrigger>
           <TabsTrigger value="punch-history"><History className="mr-2 h-4 w-4" />Punch Log</TabsTrigger>
           {canViewTeamAttendance && <TabsTrigger value="team"><Users className="mr-2 h-4 w-4" />Team</TabsTrigger>}
@@ -234,7 +234,7 @@ const AttendancePage: React.FC = () => {
                 <CardDescription>{format(new Date(), 'EEEE, MMMM d, yyyy')}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
                     <LogIn className="h-6 w-6 mx-auto mb-2 text-green-600" />
                     <p className="text-xs text-muted-foreground mb-1">First In</p>
@@ -331,12 +331,13 @@ const AttendancePage: React.FC = () => {
               {attendanceHistory.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground"><Clock className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>No attendance records yet</p></div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
                       <TableHead>First In</TableHead>
-                      <TableHead>Last Out</TableHead>
+                      <TableHead className="hidden sm:table-cell">Last Out</TableHead>
                       <TableHead>Work Hours</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -346,13 +347,14 @@ const AttendancePage: React.FC = () => {
                       <TableRow key={record.id}>
                         <TableCell className="font-medium">{format(new Date(record.date), 'EEE, MMM d')}</TableCell>
                         <TableCell>{formatTime(record.check_in)}</TableCell>
-                        <TableCell>{formatTime(record.check_out)}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{formatTime(record.check_out)}</TableCell>
                         <TableCell>{record.work_hours ? `${record.work_hours}h` : '-'}</TableCell>
                         <TableCell>{getStatusBadge(record.status)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -434,14 +436,15 @@ const PunchHistoryTab: React.FC<{ userId: string | undefined }> = ({ userId }) =
             <p>No punch records yet</p>
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Time</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Location</TableHead>
+                <TableHead className="hidden sm:table-cell">Source</TableHead>
+                <TableHead className="hidden sm:table-cell">Location</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -450,12 +453,13 @@ const PunchHistoryTab: React.FC<{ userId: string | undefined }> = ({ userId }) =
                   <TableCell className="font-medium">{format(new Date(punch.punch_time), 'EEE, MMM d')}</TableCell>
                   <TableCell className="font-mono">{format(new Date(punch.punch_time), 'hh:mm:ss a')}</TableCell>
                   <TableCell>{getPunchTypeBadge(punch.punch_type)}</TableCell>
-                  <TableCell>{getSourceBadge(punch.source)}</TableCell>
-                  <TableCell className="text-muted-foreground">{punch.device_location || '-'}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{getSourceBadge(punch.source)}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground">{punch.device_location || '-'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </CardContent>
     </Card>

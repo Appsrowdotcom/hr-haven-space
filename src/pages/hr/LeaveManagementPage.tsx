@@ -441,12 +441,12 @@ const LeaveManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Leave Management</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Leave Management</h1>
           <p className="text-muted-foreground">Apply for leave and track your requests</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canConfigureLeaveTypes && <InitializeLeaveBalances onInitialized={fetchLeaveBalances} />}
           <Dialog
             open={applyDialogOpen}
@@ -464,7 +464,7 @@ const LeaveManagementPage: React.FC = () => {
                 Apply Leave
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-full sm:max-w-lg max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Apply for Leave</DialogTitle>
               </DialogHeader>
@@ -635,7 +635,7 @@ const LeaveManagementPage: React.FC = () => {
 
       {/* Leave Balances */}
       {(leaveBalances.length > 0 || monthlyUsage.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {/* Regular annual leave balances */}
           {leaveBalances
             .filter((balance) => !balance.is_monthly_quota)
@@ -722,7 +722,7 @@ const LeaveManagementPage: React.FC = () => {
       )}
 
       <Tabs defaultValue="my-requests">
-        <TabsList className="flex-wrap">
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="my-requests">My Requests</TabsTrigger>
           {canApproveLeave && <TabsTrigger value="pending-approvals">Pending Approvals</TabsTrigger>}
           {(canViewLeave || canManageBalance) && (
@@ -769,16 +769,17 @@ const LeaveManagementPage: React.FC = () => {
                   <p>No leave requests yet</p>
                 </div>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Type</TableHead>
                       <TableHead>Duration</TableHead>
-                      <TableHead>Days</TableHead>
-                      <TableHead>Request Type</TableHead>
-                      <TableHead>Paid/Unpaid</TableHead>
+                      <TableHead className="hidden sm:table-cell">Days</TableHead>
+                      <TableHead className="hidden md:table-cell">Request Type</TableHead>
+                      <TableHead className="hidden md:table-cell">Paid/Unpaid</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Applied On</TableHead>
+                      <TableHead className="hidden sm:table-cell">Applied On</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -788,15 +789,16 @@ const LeaveManagementPage: React.FC = () => {
                         <TableCell>
                           {request.start_date} to {request.end_date}
                         </TableCell>
-                        <TableCell>{request.total_days}</TableCell>
-                        <TableCell>{getRequestTypeBadge(request.request_type as RequestType)}</TableCell>
-                        <TableCell>{getPaidBadge(request.is_paid)}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{request.total_days}</TableCell>
+                        <TableCell className="hidden md:table-cell">{getRequestTypeBadge(request.request_type as RequestType)}</TableCell>
+                        <TableCell className="hidden md:table-cell">{getPaidBadge(request.is_paid)}</TableCell>
                         <TableCell>{getStatusBadge(request.status)}</TableCell>
-                        <TableCell>{new Date(request.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{new Date(request.created_at).toLocaleDateString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -816,15 +818,16 @@ const LeaveManagementPage: React.FC = () => {
                     <p>No pending requests</p>
                   </div>
                 ) : (
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Employee</TableHead>
                         <TableHead>Type</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Request Type</TableHead>
-                        <TableHead>Paid</TableHead>
-                        <TableHead>Approvals</TableHead>
+                        <TableHead className="hidden sm:table-cell">Duration</TableHead>
+                        <TableHead className="hidden md:table-cell">Request Type</TableHead>
+                        <TableHead className="hidden md:table-cell">Paid</TableHead>
+                        <TableHead className="hidden sm:table-cell">Approvals</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -840,7 +843,7 @@ const LeaveManagementPage: React.FC = () => {
                             </div>
                           </TableCell>
                           <TableCell>{request.leave_type_name || request.leave_type?.name || "Unknown"}</TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             <div>
                               <p>
                                 {request.start_date} to {request.end_date}
@@ -848,8 +851,8 @@ const LeaveManagementPage: React.FC = () => {
                               <p className="text-xs text-muted-foreground">{request.total_days} days</p>
                             </div>
                           </TableCell>
-                          <TableCell>{getRequestTypeBadge(request.request_type as RequestType)}</TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">{getRequestTypeBadge(request.request_type as RequestType)}</TableCell>
+                          <TableCell className="hidden md:table-cell">
                             {canApproveLeave ? (
                               <div className="flex items-center gap-2">
                                 <Switch
@@ -865,7 +868,7 @@ const LeaveManagementPage: React.FC = () => {
                               <p className="text-xs text-muted-foreground mt-1">{request.auto_unpaid_reason}</p>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden sm:table-cell">
                             <div className="space-y-1 text-xs">
                               <div className="flex items-center gap-1">
                                 Manager:{" "}
@@ -936,6 +939,7 @@ const LeaveManagementPage: React.FC = () => {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
