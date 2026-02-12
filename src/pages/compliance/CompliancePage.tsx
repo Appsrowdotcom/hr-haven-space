@@ -12,7 +12,7 @@ export default function CompliancePage() {
       </div>
 
       <Tabs defaultValue="requirements" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="requirements" className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4" />
             Requirements
